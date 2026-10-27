@@ -39,6 +39,19 @@ const EXTRACTED: string[] = [
   'pageName_',
   'pageTemplateName_',
   'reportName_',
+  // PR 3: src/dates.ts
+  'tz_',
+  'todayStr_',
+  'dstr_',
+  'parseDay_',
+  'd_',
+  'asDate_',
+  'longDate_',
+  'rangeLabel_',
+  'stampLabel_',
+  'weeks_',
+  'currentWeek_',
+  'checkpointLabel_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

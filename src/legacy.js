@@ -10,7 +10,6 @@ import {
   appendTableRow as appendRow_,
   currency as currency_,
   DEFAULT_SETTINGS,
-  DEFAULT_TZ,
   money as money_,
   pageName as pageName_,
   pageTemplateName as pageTemplateName_,
@@ -19,6 +18,19 @@ import {
   settings as settings_,
   shortName as shortName_,
 } from './config.js';
+import {
+  checkpointLabel as checkpointLabel_,
+  currentWeek as currentWeek_,
+  noonDate as d_,
+  dayKey as dstr_,
+  longDate as longDate_,
+  parseDay as parseDay_,
+  rangeLabel as rangeLabel_,
+  stampLabel as stampLabel_,
+  today as todayStr_,
+  timeZone as tz_,
+  readWeeks as weeks_,
+} from './dates.js';
 import {
   lastDataRow as lastRealRow_,
   setCells as setCells_,
@@ -1200,23 +1212,6 @@ function reportsAll_() {
   });
 }
 
-function weeks_() {
-  return table_('weeks').rows.map(function (w) { w.week = num_(w.week); return w; })
-    .filter(function (w) { return w.week > 0 && w.opens; })
-    .sort(function (a, b) { return a.week - b.week; });
-}
-
-function currentWeek_(weeks, today) {
-  var cur = null;
-  weeks.forEach(function (w) { if (dstr_(w.opens) <= today) cur = w; });
-  return cur;
-}
-
-function checkpointLabel_(weeks) {
-  var w6 = find_(weeks, function (w) { return w.week === 6; });
-  return w6 ? longDate_(w6.covers_start) : 'week 6';
-}
-
 function latestSnapshot_(rows, beforeWeek) {
   var ws = rows.map(function (r) { return r.week; }).filter(function (w) { return w < beforeWeek; });
   if (!ws.length) return [];
@@ -1232,42 +1227,7 @@ function snapshotFor_(rows, week) {
 
 /* ============================== Small utilities ============================== */
 
-/** The programme's time zone, from Settings (time_zone). */
-function tz_() {
-  var z = String(settings_().time_zone || '').trim();
-  return /^[A-Za-z_]+\/[A-Za-z_\-\/]+$|^UTC$/.test(z) ? z : DEFAULT_TZ;
-}
-
-function todayStr_() {
-  var p = settings_().pretend_today;
-  if (p) { var s = dstr_(p); if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; }
-  return Utilities.formatDate(new Date(), tz_(), 'yyyy-MM-dd');
-}
-
-function dstr_(v) {
-  if (!v) return '';
-  if (Object.prototype.toString.call(v) === '[object Date]') return Utilities.formatDate(v, tz_(), 'yyyy-MM-dd');
-  return String(v).trim().slice(0, 10);
-}
-
-function parseDay_(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2], 12); }
-function d_(a) { return new Date(a[0], a[1] - 1, a[2], 12); }
-function asDate_(v) { return Object.prototype.toString.call(v) === '[object Date]' ? v : parseDay_(dstr_(v)); }
-
-function longDate_(v) { return v ? Utilities.formatDate(asDate_(v), tz_(), 'EEEE d MMMM') : ''; }
-
-function rangeLabel_(a, b) {
-  var A = asDate_(a), B = asDate_(b);
-  var sameMonth = Utilities.formatDate(A, tz_(), 'MM') === Utilities.formatDate(B, tz_(), 'MM');
-  return Utilities.formatDate(A, tz_(), sameMonth ? 'd' : 'd MMMM') + ' to ' + Utilities.formatDate(B, tz_(), 'd MMMM');
-}
-
 function fmtStamp_(d) { return Utilities.formatDate(d, tz_(), 'yyyy-MM-dd HH:mm'); }
-function stampLabel_(v) {
-  if (Object.prototype.toString.call(v) === '[object Date]') return Utilities.formatDate(v, tz_(), "HH:mm 'on' EEEE d MMMM");
-  return String(v || '');
-}
-
 function clean_(v, max) { return String(v === undefined || v === null ? '' : v).trim().slice(0, max); }
 function listOf_(v) { return String(v || '').split(',').map(function (s) { return s.trim(); }).filter(String); }
 function find_(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
