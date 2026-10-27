@@ -12,6 +12,15 @@
 // Web app (the report page).
 export { doGet, doPost } from './api.js';
 
+// Emails: menu items and time-driven triggers.
+export {
+  autoDigests,
+  autoMondayReminder,
+  menuDigestsNow,
+  menuRemindersNow,
+  menuSendReplies,
+} from './email.js';
+
 export {
   // Simple trigger that builds the menu.
   onOpen,
@@ -20,7 +29,6 @@ export {
   checkSetup,
   menuShowThisWeek,
   menuShowAll,
-  menuSendReplies,
   menuRefreshLog,
   menuPreparePage,
   menuCreateLinks,
@@ -29,10 +37,6 @@ export {
   menuEmailsOff,
   menuAddDemo,
   menuRemoveDemo,
-  menuRemindersNow,
-  menuDigestsNow,
   // Time-driven triggers.
-  autoMondayReminder,
-  autoDigests,
   autoDaily,
 } from './legacy.js';

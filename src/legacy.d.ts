@@ -9,7 +9,6 @@ export function setup(): void;
 export function checkSetup(): string;
 export function menuShowThisWeek(): void;
 export function menuShowAll(): void;
-export function menuSendReplies(): void;
 export function menuRefreshLog(): void;
 export function menuPreparePage(): void;
 export function menuCreateLinks(): void;
@@ -18,10 +17,6 @@ export function menuEmailsOn(): void;
 export function menuEmailsOff(): void;
 export function menuAddDemo(): void;
 export function menuRemoveDemo(): void;
-export function menuRemindersNow(): void;
-export function menuDigestsNow(): void;
 
 // Time-driven triggers created by menuEmailsOn.
-export function autoMondayReminder(): void;
-export function autoDigests(): void;
 export function autoDaily(): void;

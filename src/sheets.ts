@@ -233,3 +233,12 @@ export function setCells(table: Table, rowNumber: number, record: Record<string,
     if (column) table.sheet.getRange(rowNumber, column).setValue(safeValue(record[field]));
   });
 }
+
+/** A short message in the corner of the Sheet; written to the log when there is no Sheet open. */
+export function toast(message: string): void {
+  try {
+    spreadsheet().toast(message, 'Revenue Accelerator', 8);
+  } catch {
+    Logger.log(message);
+  }
+}
