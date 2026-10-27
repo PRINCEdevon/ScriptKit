@@ -29,8 +29,6 @@ import {
   parentFolder as parentFolder_,
 } from './drive.js';
 import {
-  autoDigests,
-  autoMondayReminder,
   emailDestination as emailDestination_,
   menuDigestsNow,
   menuRemindersNow,
@@ -58,6 +56,10 @@ import {
   isDemo as isDemo_,
   allTeams as teamsAll_,
 } from './teams.js';
+import {
+  menuEmailsOff,
+  menuEmailsOn,
+} from './triggers.js';
 import {
   listOf as listOf_,
   toNumber as num_,
@@ -242,24 +244,6 @@ function menuEmailLinks() {
   });
   toast_('Links sent to ' + targets.length + (targets.length === 1 ? ' team.' : ' teams.'));
 }
-
-function menuEmailsOn() {
-  removeTriggers_();
-  ScriptApp.newTrigger('autoMondayReminder').timeBased().everyDays(1).atHour(14).inTimezone(tz_()).create();
-  ScriptApp.newTrigger('autoDigests').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).inTimezone(tz_()).create();
-  ScriptApp.newTrigger('autoDaily').timeBased().everyDays(1).atHour(5).inTimezone(tz_()).create();
-  toast_('Automatic emails are on: reminders on due days at 14:00, digests on Tuesdays at 07:00 (' + tz_() + ' time).');
-}
-
-function menuEmailsOff() { removeTriggers_(); toast_('Automatic emails are off.'); }
-
-function removeTriggers_() {
-  ScriptApp.getProjectTriggers().forEach(function (tr) {
-    if (['autoMondayReminder', 'autoDigests', 'autoDaily'].indexOf(tr.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(tr);
-  });
-}
-
-function autoDaily() { refreshReportLog_(); }
 
 /* ============================== Checking permissions ============================== */
 
@@ -547,9 +531,6 @@ export {
   menuPreparePage,
   menuCreateLinks,
   menuEmailLinks,
-  menuEmailsOn,
-  menuEmailsOff,
   menuAddDemo,
   menuRemoveDemo,
-  autoDaily,
 };

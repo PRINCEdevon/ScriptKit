@@ -13,10 +13,5 @@ export function menuRefreshLog(): void;
 export function menuPreparePage(): void;
 export function menuCreateLinks(): void;
 export function menuEmailLinks(): void;
-export function menuEmailsOn(): void;
-export function menuEmailsOff(): void;
 export function menuAddDemo(): void;
 export function menuRemoveDemo(): void;
-
-// Time-driven triggers created by menuEmailsOn.
-export function autoDaily(): void;

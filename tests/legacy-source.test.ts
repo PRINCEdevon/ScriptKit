@@ -112,6 +112,11 @@ const EXTRACTED: string[] = [
   'sendTickedReplies_',
   'menuSendReplies',
   'toast_',
+  // PR 6: src/triggers.ts
+  'menuEmailsOn',
+  'menuEmailsOff',
+  'removeTriggers_',
+  'autoDaily',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

@@ -21,6 +21,9 @@ export {
   menuSendReplies,
 } from './email.js';
 
+// Turning the automatic emails on and off, and the daily trigger.
+export { autoDaily, menuEmailsOff, menuEmailsOn } from './triggers.js';
+
 export {
   // Simple trigger that builds the menu.
   onOpen,
@@ -33,10 +36,6 @@ export {
   menuPreparePage,
   menuCreateLinks,
   menuEmailLinks,
-  menuEmailsOn,
-  menuEmailsOff,
   menuAddDemo,
   menuRemoveDemo,
-  // Time-driven triggers.
-  autoDaily,
 } from './legacy.js';
