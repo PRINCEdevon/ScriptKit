@@ -25,6 +25,20 @@ const EXTRACTED: string[] = [
   'safe_',
   'num_',
   'parseNumber_',
+  // PR 3: src/config.ts (SETTINGS_CACHE_ is now a real global there)
+  'DEFAULT_TZ',
+  'DEFAULT_SETTINGS',
+  'SETTINGS_CACHE_',
+  'settings_',
+  'setSetting_',
+  'appendRow_',
+  'currency_',
+  'money_',
+  'shortName_',
+  'slug_',
+  'pageName_',
+  'pageTemplateName_',
+  'reportName_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

@@ -7,8 +7,20 @@
 // Prettier, and src/legacy.d.ts describes its exports.
 
 import {
+  appendTableRow as appendRow_,
+  currency as currency_,
+  DEFAULT_SETTINGS,
+  DEFAULT_TZ,
+  money as money_,
+  pageName as pageName_,
+  pageTemplateName as pageTemplateName_,
+  reportName as reportName_,
+  setSetting as setSetting_,
+  settings as settings_,
+  shortName as shortName_,
+} from './config.js';
+import {
   lastDataRow as lastRealRow_,
-  safeValue as safe_,
   setCells as setCells_,
   spreadsheet as ss_,
   readTable as table_,
@@ -37,31 +49,9 @@ import {
  * anything below; settings, dates and feedback wording all live in tabs of the Sheet.
  */
 
-var DEFAULT_TZ = 'Africa/Johannesburg';
-
 var STAGE_NAMES = ['Dropped', '1 First meeting', '2 Shown the product', '3 Price or proposal sent', '4 Decision-maker agreed', '5 Signed or paid'];
 
 var LOG_TAB = 'Report log';
-
-var DEFAULT_SETTINGS = [
-  ['programme_name', 'USSAVI Revenue Accelerator', 'The programme\'s full name. Shown at the top of the report page, in the page title and as the sender name on emails.'],
-  ['short_name', 'URA', 'A short name for this programme, different for every programme (for example URA). Used in the page title, email subjects and Drive file names.'],
-  ['report_page_url', 'https://tools.mashauri.org/ura-report.html', 'Where the report page is hosted. Team links are this address plus the team\'s private code. After changing it, use "Create missing team links" to update every link.'],
-  ['contact_email', 'simon.gifford@mashauri.org', 'Shown to students if something goes wrong, and used as the reply-to address on emails.'],
-  ['admin_email', 'simon.gifford@mashauri.org', 'Receives the Tuesday summary of the week\'s reports.'],
-  ['signoff', 'Simon', 'How emails and replies are signed.'],
-  ['time_zone', DEFAULT_TZ, 'The programme\'s time zone, used for dates, deadlines and email times (for example Africa/Johannesburg or Asia/Kolkata). Change it before the programme starts, then run "Set up or repair the sheet" and turn automatic emails off and on again.'],
-  ['currency_symbol', 'R', 'Shown before every amount of money (for example R or ₹).'],
-  ['reminders_on', 'Yes', 'Yes: teams that have not reported get a reminder at 14:00 (programme time zone) on the day the report is due.'],
-  ['digests_on', 'Yes', 'Yes: each mentor gets their teams\' reports, and you get a summary, at 07:00 (programme time zone) on Tuesdays.'],
-  ['cc_mentor_on_replies', 'Yes', 'Yes: your written replies are copied to the team\'s mentor.'],
-  ['max_feedback_items', 6, 'The most instant-feedback notes a team sees after sending a report.'],
-  ['min_teams_for_comparison', 3, 'How many teams on a track must have reported before a team is compared with the middle team.'],
-  ['pretend_today', '', 'For testing only. Put a date here (for example 2026-12-20) and the system behaves as if it were that day. Leave EMPTY when the programme is live. While a date is here, the automatic emails do not send unless send_all_emails_to is filled in.'],
-  ['send_all_emails_to', '', 'For testing only. If an email address is here, EVERY email this Sheet sends goes to that address instead, marked [TEST] and showing who it would have gone to. Leave EMPTY when the programme is live.'],
-  ['web_app_url', '', 'Filled in by "Prepare the report page": the address the report page talks to.'],
-  ['proof_folder_id', '', 'Filled in automatically: the Drive folder where proof-of-payment files are saved.']
-];
 
 var DEFAULT_WEEKS = [
   // week, covers from, covers to, opens, due, scoreboard
@@ -111,23 +101,6 @@ var OLD_RULE_TEXT = {
   checkpoint_org_ok: { detail: ["You already have an organisation that has signed or paid. Keep the signed letter or proof of payment ready."] },
   cohort_org: { lead: ["The middle Organisation-track team moved {median_moved} organisations forward this week."] }
 };
-
-/* ============================== Programme names ============================== */
-
-/** The programme's short name, for example URA. */
-function shortName_() { return String(settings_().short_name || 'Report').trim() || 'Report'; }
-
-/** The short name as it appears in file names: "URA" becomes "ura". */
-function slug_() { return shortName_().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'report'; }
-
-/** The ready-to-upload page made by "Prepare the report page", for example ura-report.html. */
-function pageName_() { return slug_() + '-report.html'; }
-
-/** The template it is made from, kept in the same Drive folder as the Sheet. */
-function pageTemplateName_() { return slug_() + '-report TEMPLATE.html'; }
-
-/** For example "URA report". */
-function reportName_() { return shortName_() + ' report'; }
 
 /* ============================== Web endpoints ============================== */
 
@@ -1192,19 +1165,6 @@ function isDemo_(t) { return /^DEMO/.test(String(t.team_id)); }
 
 /* ============================== Sheet helpers ============================== */
 
-function appendRow_(key, obj) {
-  if (key === 'settings') SETTINGS_CACHE_ = null;
-  var t = table_(key);
-  var row = t.headers.map(function () { return ''; });
-  Object.keys(obj).forEach(function (k) { if (t.col[k]) row[t.col[k] - 1] = safe_(obj[k]); });
-  var r = lastRealRow_(t) + 1;
-  if (r > t.sheet.getMaxRows()) t.sheet.insertRowsAfter(t.sheet.getMaxRows(), 50);
-  t.sheet.getRange(r, 1, 1, row.length).setValues([row]);
-  if (key === 'reports' && t.col.send_reply) {
-    t.sheet.getRange(r, t.col.send_reply).setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build()).setValue(false);
-  }
-}
-
 /** Gives every real report a tick box, and removes tick boxes (and anything else) from the empty rows below. */
 function tidyReportRows_(t) {
   var sh = t.sheet;
@@ -1221,27 +1181,6 @@ function tidyReportRows_(t) {
     cb.setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build());
     cb.setValues(vals.map(function (v) { return [v[0] === true]; }));
   }
-}
-
-/* Settings are read once per run (each web request or menu click is a new run). */
-var SETTINGS_CACHE_ = null;
-
-function settings_() {
-  if (SETTINGS_CACHE_) return SETTINGS_CACHE_;
-  var out = {};
-  var read = false;
-  try { table_('settings').rows.forEach(function (r) { var k = String(r.key); if (!(k in out)) out[k] = r.value; }); read = true; } catch (e) { }
-  DEFAULT_SETTINGS.forEach(function (d) { if (!(d[0] in out)) out[d[0]] = d[1]; });
-  if (read) SETTINGS_CACHE_ = out;
-  return out;
-}
-
-function setSetting_(key, value) {
-  SETTINGS_CACHE_ = null;
-  var t = table_('settings');
-  var r = find_(t.rows, function (x) { return String(x.key) === key; });
-  if (r) setCells_(t, r._row, { value: value });
-  else appendRow_('settings', { key: key, value: value, about: '' });
 }
 
 function teamsAll_() { return table_('teams').rows; }
@@ -1328,13 +1267,6 @@ function stampLabel_(v) {
   if (Object.prototype.toString.call(v) === '[object Date]') return Utilities.formatDate(v, tz_(), "HH:mm 'on' EEEE d MMMM");
   return String(v || '');
 }
-
-function money_(n) {
-  n = Math.round(num_(n));
-  return currency_() + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-function currency_() { var c = settings_().currency_symbol; return c === undefined || c === null || c === '' ? 'R' : String(c).trim(); }
 
 function clean_(v, max) { return String(v === undefined || v === null ? '' : v).trim().slice(0, max); }
 function listOf_(v) { return String(v || '').split(',').map(function (s) { return s.trim(); }).filter(String); }

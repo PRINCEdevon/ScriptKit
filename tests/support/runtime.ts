@@ -229,5 +229,7 @@ export function loadLegacy(google: FakeGoogle, now = '2026-12-07T10:00:00+02:00'
 export function useFakeGoogle(): FakeGoogle {
   const google = new FakeGoogle();
   for (const [name, service] of Object.entries(google.globals())) vi.stubGlobal(name, service);
+  // Each test is a fresh run: forget settings cached by an earlier one (see src/config.ts).
+  globalThis.SETTINGS_CACHE_ = null;
   return google;
 }
