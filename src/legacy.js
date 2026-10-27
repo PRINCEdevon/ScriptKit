@@ -8,7 +8,6 @@
 
 import {
   appendTableRow as appendRow_,
-  currency as currency_,
   DEFAULT_SETTINGS,
   money as money_,
   pageName as pageName_,
@@ -16,17 +15,14 @@ import {
   reportName as reportName_,
   setSetting as setSetting_,
   settings as settings_,
-  shortName as shortName_,
 } from './config.js';
 import {
-  checkpointLabel as checkpointLabel_,
   currentWeek as currentWeek_,
   noonDate as d_,
   dayKey as dstr_,
   longDate as longDate_,
   parseDay as parseDay_,
   rangeLabel as rangeLabel_,
-  stampLabel as stampLabel_,
   today as todayStr_,
   timeZone as tz_,
   readWeeks as weeks_,
@@ -38,35 +34,21 @@ import {
   DEFAULT_RULES,
 } from './feedback.js';
 import {
-  latestSnapshot as latestSnapshot_,
-  STAGE_NAMES,
-} from './pipeline.js';
-import {
-  byWeek as byWeek_,
-  lastBefore as lastBefore_,
   LOG_TAB,
   recordReport as recordReport_,
   refreshReportLog as refreshReportLog_,
   readReports as reportsAll_,
-  submitCorrection as submitCorrection_,
-  submitReport as submitReport_,
 } from './reports.js';
-import {
-  scoreboard as scoreboard_,
-  totals as totals_,
-} from './scoreboard.js';
 import {
   lastDataRow as lastRealRow_,
   setCells as setCells_,
   spreadsheet as ss_,
   readTable as table_,
-  readRows as tableRows_,
   TABS,
 } from './sheets.js';
 import {
   createLinks as createLinks_,
   isDemo as isDemo_,
-  teamByToken as teamByToken_,
   allTeams as teamsAll_,
   trackOf as trackOf_,
 } from './teams.js';
@@ -116,104 +98,6 @@ var OLD_RULE_TEXT = {
   checkpoint_org_ok: { detail: ["You already have an organisation that has signed or paid. Keep the signed letter or proof of payment ready."] },
   cohort_org: { lead: ["The middle Organisation-track team moved {median_moved} organisations forward this week."] }
 };
-
-/* ============================== Web endpoints ============================== */
-
-function doGet(e) {
-  try {
-    var p = (e && e.parameter) || {};
-    if (p.action === 'get') return json_(getTeamView_(String(p.t || '')));
-    return json_({ ok: false, error: 'unknown', message: 'Nothing to see here.' });
-  } catch (err) {
-    return json_({ ok: false, error: 'server', message: String(err && err.message || err) });
-  }
-}
-
-function doPost(e) {
-  try {
-    var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    if (body.action === 'submit') return json_(submitReport_(body));
-    if (body.action === 'correct') return json_(submitCorrection_(body));
-    return json_({ ok: false, error: 'unknown', message: 'Unknown request.' });
-  } catch (err) {
-    return json_({ ok: false, error: 'server', message: String(err && err.message || err) });
-  }
-}
-
-function json_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-}
-
-/* ============================== Reading the team's page ============================== */
-
-function getTeamView_(token) {
-  var settings = settings_();
-  var team = teamByToken_(token);
-  if (!team) return { ok: false, error: 'link', message: 'This link does not work.', contact: settings.contact_email };
-
-  var weeks = weeks_();
-  var today = todayStr_();
-  var cur = currentWeek_(weeks, today);
-  var reports = reportsAll_();
-  var mine = reports.filter(function (r) { return r.team_id === team.team_id; }).sort(byWeek_);
-  var thisRep = cur ? find_(mine, function (r) { return r.week === cur.week; }) : null;
-
-  var status = 'open';
-  if (String(team.status).toLowerCase() === 'stopped') status = 'stopped';
-  else if (!cur) status = 'not_started';
-  else if (thisRep) status = 'submitted';
-
-  var beforeWeek = cur ? cur.week : 999;
-  var prev = lastBefore_(mine, beforeWeek);
-  var pipelineAll = tableRows_('pipeline').filter(function (r) { return r.team_id === team.team_id; });
-  var snapWeek = status === 'submitted' ? beforeWeek + 1 : beforeWeek;
-  var snapshot = latestSnapshot_(pipelineAll, snapWeek).filter(function (o) { return o.stage > 0; });
-
-  var corrections = tableRows_('corrections').filter(function (c) { return c.team_id === team.team_id; });
-  var history = mine.slice().reverse().map(function (r) {
-    return {
-      week: r.week, late: r.late === 'Yes', asked: r.asked, yes: r.yes, no: r.no, not_yet: r.not_yet,
-      revenue: r.revenue, new_customers: r.new_customers, moved: r.orgs_moved,
-      reply: r.reply_sent_at ? String(r.reply || '') : '',
-      corrections: corrections.filter(function (c) { return num_(c.week) === r.week; }).map(function (c) { return String(c.note); })
-    };
-  });
-
-  var view = {
-    ok: true,
-    programme: settings.programme_name,
-    shortName: shortName_(),
-    currency: currency_(),
-    contact: settings.contact_email,
-    team: { name: team.team_name, track: trackOf_(team), founders: listOf_(team.founders) },
-    status: status,
-    week: cur ? weekInfo_(cur) : null,
-    firstWeek: weeks.length ? weekInfo_(weeks[0]) : null,
-    weeksTotal: weeks.length,
-    checkpointDate: checkpointLabel_(weeks),
-    prev: prev ? { week: prev.week, asked: prev.asked, revenue: prev.revenue, goal_asks: prev.goal_asks, goal_revenue: prev.goal_revenue, goal_text: String(prev.goal_text || '') } : null,
-    pipeline: snapshot.map(function (o) { return { organisation: o.organisation, stage: o.stage, note: o.note }; }),
-    totals: totals_(mine, cur ? cur.week : 0),
-    thisReport: thisRep ? {
-      submitted_at: stampLabel_(thisRep.submitted_at), submitted_by: thisRep.submitted_by, late: thisRep.late === 'Yes',
-      feedback: parseJson_(thisRep.feedback_json, [])
-    } : null,
-    history: history,
-    scoreboard: cur ? scoreboard_(cur, weeks, reports, team.team_id, today) : null,
-    stages: STAGE_NAMES
-  };
-  return view;
-}
-
-function weekInfo_(w) {
-  return {
-    n: w.week,
-    covers: rangeLabel_(w.covers_start, w.covers_end),
-    due: longDate_(w.due),
-    opens: longDate_(w.opens),
-    phase: String(w.scoreboard || 'Activity')
-  };
-}
 
 /* ============================== Preparing the report page ============================== */
 
@@ -803,15 +687,12 @@ function tidyReportRows_(t) {
 
 function fmtStamp_(d) { return Utilities.formatDate(d, tz_(), 'yyyy-MM-dd HH:mm'); }
 function find_(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
-function parseJson_(s, dflt) { try { return JSON.parse(String(s)); } catch (e) { return dflt; } }
 function toast_(msg) {
   try { ss_().toast(msg, 'Revenue Accelerator', 8); } catch (e) { Logger.log(msg); }
 }
 
 // Apps Script entrypoints, re-exported by src/main.ts. Apps Script calls these by name.
 export {
-  doGet,
-  doPost,
   onOpen,
   setup,
   checkSetup,

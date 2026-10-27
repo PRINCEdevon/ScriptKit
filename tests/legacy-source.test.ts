@@ -90,6 +90,13 @@ const EXTRACTED: string[] = [
   'byWeek_',
   'lastBefore_',
   'uniq_',
+  // PR 5: src/api.ts (doGet and doPost now come from there)
+  'doGet',
+  'doPost',
+  'json_',
+  'getTeamView_',
+  'weekInfo_',
+  'parseJson_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global
