@@ -52,6 +52,14 @@ const EXTRACTED: string[] = [
   'weeks_',
   'currentWeek_',
   'checkpointLabel_',
+  // PR 3: src/teams.ts
+  'teamsAll_',
+  'teamByToken_',
+  'trackOf_',
+  'isDemo_',
+  'createLinks_',
+  'randomToken_',
+  'pad2_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

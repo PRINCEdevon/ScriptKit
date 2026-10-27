@@ -40,6 +40,13 @@ import {
   TABS,
 } from './sheets.js';
 import {
+  createLinks as createLinks_,
+  isDemo as isDemo_,
+  teamByToken as teamByToken_,
+  allTeams as teamsAll_,
+  trackOf as trackOf_,
+} from './teams.js';
+import {
   toNumber as num_,
   parseNumber as parseNumber_,
 } from './utils.js';
@@ -857,28 +864,6 @@ function menuCreateLinks() {
   toast_(msg.length ? msg.join(' ') : 'Every team already has an up-to-date link.');
 }
 
-function createLinks_() {
-  var t = table_('teams');
-  var base = String(settings_().report_page_url || '').trim();
-  var used = t.rows.map(function (r) { return String(r.team_id); });
-  var made = 0, changed = 0;
-  t.rows.forEach(function (r) {
-    if (!String(r.team_name || '').trim()) return;
-    var upd = {};
-    if (!r.team_id) {
-      var i = 1; while (used.indexOf('T' + pad2_(i)) >= 0) i++;
-      upd.team_id = 'T' + pad2_(i); used.push(upd.team_id);
-    }
-    if (!r.status) upd.status = 'Active';
-    if (!r.token) { upd.token = randomToken_(); made++; }
-    var token = upd.token || r.token;
-    var link = base + (base.indexOf('?') >= 0 ? '&' : '?') + 't=' + token;
-    if (r.report_link !== link) { upd.report_link = link; if (r.token && r.report_link) changed++; }
-    if (Object.keys(upd).length) setCells_(t, r._row, upd);
-  });
-  return { made: made, changed: changed };
-}
-
 function menuEmailLinks() {
   createLinks_();
   var ui = SpreadsheetApp.getUi();
@@ -1173,8 +1158,6 @@ function removeDemo_() {
   try { refreshReportLog_(); } catch (e) { }
 }
 
-function isDemo_(t) { return /^DEMO/.test(String(t.team_id)); }
-
 /* ============================== Sheet helpers ============================== */
 
 /** Gives every real report a tick box, and removes tick boxes (and anything else) from the empty rows below. */
@@ -1194,15 +1177,6 @@ function tidyReportRows_(t) {
     cb.setValues(vals.map(function (v) { return [v[0] === true]; }));
   }
 }
-
-function teamsAll_() { return table_('teams').rows; }
-
-function teamByToken_(token) {
-  if (!token || token.length < 10) return null;
-  return find_(teamsAll_(), function (t) { return String(t.token) === token; });
-}
-
-function trackOf_(t) { return String(t.track).toLowerCase().indexOf('org') === 0 ? 'Organisation' : 'Direct'; }
 
 function reportsAll_() {
   return table_('reports').rows.map(function (r) {
@@ -1234,15 +1208,12 @@ function find_(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) r
 function byWeek_(a, b) { return a.week - b.week; }
 function lastBefore_(mine, week) { var p = null; mine.forEach(function (r) { if (r.week < week) p = r; }); return p; }
 function uniq_(a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); }
-function pad2_(n) { return n < 10 ? '0' + n : String(n); }
 function parseJson_(s, dflt) { try { return JSON.parse(String(s)); } catch (e) { return dflt; } }
 function median_(a) {
   var s = a.slice().sort(function (x, y) { return x - y; });
   var m = Math.floor(s.length / 2);
   return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
 }
-function randomToken_() { return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 28); }
-
 function toast_(msg) {
   try { ss_().toast(msg, 'Revenue Accelerator', 8); } catch (e) { Logger.log(msg); }
 }
