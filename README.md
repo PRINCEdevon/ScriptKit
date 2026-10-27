@@ -142,7 +142,9 @@ Before the first push to any project, compare the project's own manifest with
 folder). The repository's manifest was reconstructed from the deployment settings in use: V8,
 execute as the deploying user, anyone can access, and no `oauthScopes`, so Apps Script detects
 the scopes from the code. `clasp push` asks before it overwrites the project's manifest (the
-script deliberately does not pass `-f`), so you can still say no.
+script deliberately does not pass `-f`), so you can still say no. Without an interactive
+terminal (an agent or a script) it cannot ask, and prints "Skipping push." instead; there, once
+you have compared the manifests, run `pnpm clasp:push -f`.
 
 ## Frontend
 
