@@ -1,9 +1,10 @@
 // Transitional copy of legacy/Code.gs, bundled by scripts/build.js (see docs/migration-plan.md).
 //
-// Below this header the code is legacy/Code.gs unchanged. Later PRs move functions out into
-// typed modules and delete them here; tests/legacy-source.test.ts checks that whatever remains
-// is still identical to the original. Do not edit, format or lint this file: it is excluded
-// from TypeScript, ESLint and Prettier, and src/legacy.d.ts describes its exports.
+// Below this header the code is legacy/Code.gs unchanged. Migration PRs only delete the
+// declarations they move into typed modules and add imports for them;
+// tests/legacy-source.test.ts checks that whatever remains is still identical to the original.
+// Never change, format or lint what remains: this file is excluded from TypeScript, ESLint and
+// Prettier, and src/legacy.d.ts describes its exports.
 
 /**
  * Mashauri Revenue Accelerator: Monday report.

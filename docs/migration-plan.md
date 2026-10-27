@@ -9,8 +9,8 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 
 | #   | Branch                           | Title                                               | Status                           |
 | --- | -------------------------------- | --------------------------------------------------- | -------------------------------- |
-| 1   | `chore/scaffold`                 | chore: initialize ScriptKit development environment | Ready for review (branch pushed) |
-| 2   | `refactor/legacy-runtime`        | refactor: integrate legacy application into build   | Not started                      |
+| 1   | `chore/scaffold`                 | chore: initialize ScriptKit development environment | Merged                           |
+| 2   | `refactor/legacy-runtime`        | refactor: integrate legacy application into build   | Ready for review (branch pushed) |
 | 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Not started                      |
 | 4   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Not started                      |
 | 5   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Not started                      |
@@ -38,6 +38,38 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 7. **Administration and integration.** Menus, setup and repair, demo data, the report page
    preparation, and the remaining legacy functions. Remove the transitional legacy module,
    check every entrypoint, and document any manual verification still needed.
+
+## How each refactoring PR works
+
+The legacy code lives on in `src/legacy.js` (an unchanged copy of `legacy/Code.gs` plus an
+export block) until every function has moved. For each function or group a PR migrates:
+
+1. Write it as typed TypeScript in a feature module (`src/teams.ts`, ...), keeping its
+   behaviour, including the known issues.
+2. Delete it from `src/legacy.js` and import it there instead, so the remaining legacy code
+   calls the new version (`import { readTable as table_ } from './sheets.js'` if the name
+   changes). Add its name to `EXTRACTED` in `tests/legacy-source.test.ts`, which
+   checks that everything left in `src/legacy.js` is still identical to the original.
+3. Move entrypoints' exports in `src/main.ts` from `./legacy.js` to the new module.
+4. Add focused unit tests for the new module. The baseline tests in `tests/baseline/` must
+   keep passing unchanged: they run the same scenarios against `legacy/Code.gs` and the
+   bundle and require identical results. Extend them when a PR touches behaviour they do not
+   yet cover.
+
+[legacy-map.md](legacy-map.md) shows which functions belong to which PR and how they call
+each other.
+
+## Verifying a build on Google
+
+The tests use fake Google services, so each milestone that changes the bundle should also be
+checked once in a **staging** Apps Script project bound to a copy of the Sheet (the URA TEST
+Sheet is suitable):
+
+1. Compare the staging project's manifest with `appsscript.json`, then `pnpm clasp:push`.
+2. Reload the Sheet: the Revenue Accelerator menu appears. Run "Check permissions".
+3. Update the staging web app deployment to a new version, so `/exec` serves the bundle.
+4. With `send_all_emails_to` set, work through the URA end-to-end test script (kept with
+   the test Sheet in the programme's Drive folder, not in this repository).
 
 ## Legacy entrypoints
 

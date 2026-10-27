@@ -9,9 +9,11 @@ framework or wrap Google's services; application code still calls `SpreadsheetAp
 The first application is the **Revenue Accelerator Monday report**, which is being migrated
 from one large legacy file into this repository, one pull request at a time.
 
-> **Current status: tooling only.** The build produces a smoke-test bundle, not the
-> application. The Revenue Accelerator still runs from `legacy/Code.gs`, pasted into the Apps
-> Script editor. See [docs/migration-plan.md](docs/migration-plan.md) for progress.
+> **Current status: the original application is in the build, not yet refactored.** The bundle
+> contains `src/legacy.js`, an unchanged copy of `legacy/Code.gs`, behind all 21 of its
+> entrypoints. It is tested against fake Google services; until it has been pushed to a staging
+> project, the live Sheets keep running the pasted `Code.gs`. See
+> [docs/migration-plan.md](docs/migration-plan.md) for progress.
 
 ## The Revenue Accelerator
 
@@ -71,19 +73,25 @@ pnpm check     # typecheck, lint, format check, tests and build
 | `pnpm test`         | Run the Vitest suite once.                                    |
 | `pnpm test:watch`   | Run Vitest in watch mode.                                     |
 | `pnpm check`        | Everything CI runs, in the same order.                        |
+| `pnpm clasp:push`   | Check, build and upload `dist/` with clasp (see below).       |
 
-Tests run in Node.js with no Google credentials. They must never call real Google services:
-anything that would touch a Sheet, Drive, email or triggers is replaced with a small fake.
+Tests run in Node.js with no Google credentials and never call real Google services.
+`tests/support/` has in-memory fakes of the services the application uses and runs a script
+the way Apps Script does, with a fresh global scope for every call. The baseline tests in
+`tests/baseline/` run the same scenarios against the original `legacy/Code.gs` and against
+the bundle, and require identical results: that is how each refactoring step proves it has
+not changed behaviour.
 
 ## Project layout
 
 ```text
-src/         Apps Script source (TypeScript). main.ts lists the entrypoints.
-tests/       Vitest tests.
+src/         Apps Script source. main.ts lists the entrypoints; legacy.js is the
+             transitional copy of the original, shrinking as code moves into typed modules.
+tests/       Vitest tests; support/ holds the fake Apps Script services.
 scripts/     Build and Git hook scripts.
 legacy/      The original Code.gs, kept byte-for-byte as the behaviour reference.
 web/         The HTML report page, deployed separately from the backend.
-docs/        Migration plan and known issues.
+docs/        Migration plan, map of the legacy code, and known issues.
 dist/        Build output (generated, not committed).
 ```
 
@@ -120,18 +128,21 @@ To link a checkout to a script project, copy `.clasp.json.example` to `.clasp.js
 by Git) and fill in the script ID. Log in with `pnpm exec clasp login`; the token is stored
 in `~/.clasprc.json`, outside the repository.
 
-**There is no deploy command yet, on purpose.** The current bundle is only a smoke test, and
-pushing it would replace the live application code. A deploy script will be added once the
-Revenue Accelerator is in the build. The eventual flow is:
+`pnpm clasp:push` runs `pnpm check` and then `clasp push`, uploading `dist/` to whichever
+project `.clasp.json` names. Nothing runs it automatically. The flow is:
 
-1. `pnpm install` and `pnpm check`.
-2. `pnpm build`.
-3. `clasp push` to a **staging** script project bound to a copy of the Sheet.
-4. Test there, then push to production and update the web app deployment.
+1. Point `.clasp.json` at a **staging** script project bound to a copy of the Sheet, and run
+   `pnpm clasp:push`.
+2. In the staging Sheet, reload and run "Check permissions"; then update the staging web app
+   deployment and work through the manual test script.
+3. Only then point `.clasp.json` at production, push, and update the production deployment.
 
-`appsscript.json` was reconstructed from the deployment settings in use (V8, execute as the
-deploying user, anyone can access). Compare it with the real project's manifest before the
-first push: a manifest without `oauthScopes` lets Apps Script detect the scopes it needs.
+Before the first push to any project, compare the project's own manifest with
+`appsscript.json` (for example `pnpm exec clasp clone <scriptId>` into an empty scratch
+folder). The repository's manifest was reconstructed from the deployment settings in use: V8,
+execute as the deploying user, anyone can access, and no `oauthScopes`, so Apps Script detects
+the scopes from the code. `clasp push` asks before it overwrites the project's manifest (the
+script deliberately does not pass `-f`), so you can still say no.
 
 ## Frontend
 
