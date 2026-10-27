@@ -9,10 +9,10 @@ framework or wrap Google's services; application code still calls `SpreadsheetAp
 The first application is the **Revenue Accelerator Monday report**, which is being migrated
 from one large legacy file into this repository, one pull request at a time.
 
-> **Current status: the original application is in the build, not yet refactored.** The bundle
-> contains `src/legacy.js`, an unchanged copy of `legacy/Code.gs`, behind all 21 of its
-> entrypoints. It is tested against fake Google services; until it has been pushed to a staging
-> project, the live Sheets keep running the pasted `Code.gs`. See
+> **Current status: migration in progress.** The bundle runs the whole application behind all
+> 21 of its entrypoints. Spreadsheet access, settings, dates and teams are typed modules in
+> `src/`; the rest is still the original code in `src/legacy.js`. The live Sheets keep running
+> the pasted `Code.gs` until the migrated bundle is deployed. See
 > [docs/migration-plan.md](docs/migration-plan.md) for progress.
 
 ## The Revenue Accelerator

@@ -7,33 +7,37 @@ the 21 entrypoints listed in [migration-plan.md](migration-plan.md).
 
 ## Shared state
 
-- **Constants:** `STAGE_NAMES`, `TABS` (the spreadsheet schema), `LOG_TAB`, `DEFAULT_TZ`,
-  `DEFAULT_SETTINGS`, `DEFAULT_WEEKS`, `DEFAULT_RULES`, `OLD_RULE_TEXT`, `OLD_DEFAULTS`.
-- **Per-execution cache:** `SETTINGS_CACHE_`, filled by `settings_()` and cleared by every
-  settings write (`appendRow_('settings')`, `setSetting_`, `setup`, `tidySettings_`). It is the
-  only top-level variable that is reassigned. Imported bindings are read-only, so it cannot
-  simply be moved to a module and imported into `src/legacy.js` while `setup` and
-  `tidySettings_` (PR 7) still assign to it: keep it in `src/legacy.js` until all its writers
-  have moved, or replace the assignments with a function that clears it.
-- **Script property:** `SHEET_ID`, written by `setup`, read by `ss_()`.
+- **Constants:** `STAGE_NAMES`, `LOG_TAB`, `DEFAULT_WEEKS`, `DEFAULT_RULES`, `OLD_RULE_TEXT`,
+  `OLD_DEFAULTS` are still in `src/legacy.js`. `TABS` (the spreadsheet schema) is in
+  `src/sheets.ts`; `DEFAULT_TZ` and `DEFAULT_SETTINGS` are in `src/config.ts`.
+- **Per-execution cache:** `SETTINGS_CACHE_`, filled by `settings()` and cleared by every
+  settings write. It is the only top-level variable that is reassigned. `src/config.ts` keeps
+  it as a real global variable (`globalThis.SETTINGS_CACHE_`), as the original script did,
+  because `setup` and `tidySettings_` still clear it by assigning `SETTINGS_CACHE_ = null`
+  and an imported binding cannot be assigned. PR 7 moves those two and turns the cache into
+  a module variable.
+- **Script property:** `SHEET_ID`, written by `setup`, read by `spreadsheet()`.
 - **Dead code:** `fmtStamp_` is never called. esbuild leaves it out of the bundle.
 
-## PR 3: Sheets, settings and teams
+## PR 3: Sheets, settings and teams (done)
 
-| Function                                                                                 | Role                                                              | Uses                              |
-| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------- |
-| `ss_`                                                                                    | The programme's spreadsheet (by `SHEET_ID`, else the active one). | SpreadsheetApp, PropertiesService |
-| `table_`, `tableRows_`                                                                   | Read a tab as objects keyed by `TABS` field names.                | Sheets                            |
-| `appendRow_`, `lastRealRow_`, `setCells_`, `safe_`                                       | Write rows and cells; `safe_` stops text becoming a formula.      | Sheets                            |
-| `settings_`, `setSetting_`                                                               | Read (cached) and write the Settings tab.                         | `table_`, `appendRow_`            |
-| `teamsAll_`, `teamByToken_`, `trackOf_`, `isDemo_`                                       | Team lookup, by private code for web requests.                    | `table_`                          |
-| `reportsAll_`, `weeks_`, `currentWeek_`, `checkpointLabel_`                              | Reports with numeric fields; the schedule and the open week.      | `table_`, `dstr_`                 |
-| `createLinks_`, `randomToken_`, `pad2_`                                                  | Team IDs, private codes and report links.                         | `table_`, `setCells_`, Utilities  |
-| `tz_`, `todayStr_`, `dstr_`, `parseDay_`, `d_`, `asDate_`                                | Time zone and dates as `yyyy-MM-dd` strings; `pretend_today`.     | Utilities                         |
-| `longDate_`, `rangeLabel_`, `stampLabel_`                                                | Dates for people.                                                 | Utilities                         |
-| `num_`, `parseNumber_`, `money_`, `currency_`                                            | Numbers and money.                                                | `settings_`                       |
-| `clean_`, `listOf_`, `find_`, `byWeek_`, `lastBefore_`, `uniq_`, `median_`, `parseJson_` | Small helpers.                                                    |                                   |
-| `shortName_`, `slug_`, `pageName_`, `pageTemplateName_`, `reportName_`                   | Names derived from `short_name`.                                  | `settings_`                       |
+`src/legacy.js` imports these under their old names (for example
+`import { readTable as table_ } from './sheets.js'`).
+
+| Legacy                                                                                               | Now                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TABS`, `ss_`, `table_`, `tableRows_`, `lastRealRow_`, `setCells_`, `safe_`                          | `src/sheets.ts`: `TABS`, `spreadsheet`, `readTable` (row mapping in the pure `mapTable`), `readRows`, `lastDataRow`, `setCells`, `safeValue`; plus `appendRow` |
+| `appendRow_`                                                                                         | `src/config.ts`: `appendTableRow`, which clears the settings cache and calls `appendRow`                                                                       |
+| `DEFAULT_TZ`, `DEFAULT_SETTINGS`, `settings_`, `setSetting_`                                         | `src/config.ts`: the same constants, `settings` (pure core `settingsFrom`), `setSetting`, `clearSettingsCache`                                                 |
+| `currency_`, `money_`, `shortName_`, `slug_`, `pageName_`, `pageTemplateName_`, `reportName_`        | `src/config.ts`: `currency`, `money`, `shortName`, `slug`, `pageName`, `pageTemplateName`, `reportName`                                                        |
+| `tz_`, `todayStr_`, `dstr_`, `parseDay_`, `d_`, `asDate_`, `longDate_`, `rangeLabel_`, `stampLabel_` | `src/dates.ts`: `timeZone`, `today`, `dayKey`, `parseDay`, `noonDate`, `asDate`, `longDate`, `rangeLabel`, `stampLabel`                                        |
+| `weeks_`, `currentWeek_`, `checkpointLabel_`                                                         | `src/dates.ts`: `readWeeks`, `currentWeek`, `checkpointLabel`                                                                                                  |
+| `teamsAll_`, `teamByToken_`, `trackOf_`, `isDemo_`, `createLinks_`, `randomToken_`, `pad2_`          | `src/teams.ts`: `allTeams`, `teamByToken`, `trackOf`, `isDemo`, `createLinks` (plan in the pure `planLinks`), `randomToken`, `reportLink`                      |
+| `num_`, `parseNumber_`                                                                               | `src/utils.ts`: `toNumber`, `parseNumber`                                                                                                                      |
+
+Still in `src/legacy.js`, moving with their first typed caller (typed modules never import
+from `src/legacy.js`): the small helpers `clean_`, `listOf_`,
+`find_`, `byWeek_`, `lastBefore_`, `uniq_`, `median_` and `parseJson_`.
 
 ## PR 4: reports and pipeline
 
@@ -44,6 +48,7 @@ the 21 entrypoints listed in [migration-plan.md](migration-plan.md).
 | `submitReport_`                                           | Under the script lock: check the code, week and duplicates, then validate, save proof and record.   | LockService, `refreshReportLog_`     |
 | `validate_`                                               | Check and clean the submitted answers and pipeline.                                                 | `parseNumber_`, `clean_`             |
 | `recordReport_`                                           | Compare with earlier reports and pipeline, build feedback, append the rows. Also used by demo data. | `buildFeedback_`, `appendRow_`       |
+| `reportsAll_`                                             | Every report, with its numbers as numbers and its team ID as text.                                  | `table_`, `num_`                     |
 | `latestSnapshot_`, `snapshotFor_`, `totals_`, `weekInfo_` | Pipeline snapshots, running totals and week labels.                                                 |                                      |
 | `saveProof_`, `proofRootFolder_`, `parentFolder_`         | Save proof files in Drive next to the Sheet.                                                        | DriveApp, Utilities, `setSetting_`   |
 | `json_`                                                   | JSON response.                                                                                      | ContentService                       |

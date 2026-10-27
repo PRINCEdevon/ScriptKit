@@ -15,6 +15,9 @@ works and `docs/migration-plan.md` for what is being done now.
 - `src/legacy.js` is its transitional copy in the build. Only ever delete migrated
   declarations from it and add imports; list each deletion in `EXTRACTED` in
   `tests/legacy-source.test.ts`. `docs/legacy-map.md` shows what goes where.
+- Imports only go one way: `src/legacy.js` imports from typed modules, never the reverse
+  (that would create an import cycle and pull the legacy copy into type checking). A
+  helper still in `src/legacy.js` moves to a typed module with its first typed caller.
 - The HTML frontend in `web/` is deployed separately. Preserve its API contract.
 - No frameworks, dependency injection, classes-as-services or layered folders. Prefer a flat
   set of feature modules (`reports.ts`, `feedback.ts`, ...), created when they are needed.

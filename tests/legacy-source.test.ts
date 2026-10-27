@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import {
   legacySource,
@@ -13,7 +14,72 @@ import {
 //
 // When a PR moves a legacy function or variable into a module, delete it from src/legacy.js
 // and add its name here.
-const EXTRACTED: string[] = [];
+const EXTRACTED: string[] = [
+  // PR 3: src/sheets.ts and src/utils.ts
+  'TABS',
+  'ss_',
+  'table_',
+  'tableRows_',
+  'lastRealRow_',
+  'setCells_',
+  'safe_',
+  'num_',
+  'parseNumber_',
+  // PR 3: src/config.ts (SETTINGS_CACHE_ is now a real global there)
+  'DEFAULT_TZ',
+  'DEFAULT_SETTINGS',
+  'SETTINGS_CACHE_',
+  'settings_',
+  'setSetting_',
+  'appendRow_',
+  'currency_',
+  'money_',
+  'shortName_',
+  'slug_',
+  'pageName_',
+  'pageTemplateName_',
+  'reportName_',
+  // PR 3: src/dates.ts
+  'tz_',
+  'todayStr_',
+  'dstr_',
+  'parseDay_',
+  'd_',
+  'asDate_',
+  'longDate_',
+  'rangeLabel_',
+  'stampLabel_',
+  'weeks_',
+  'currentWeek_',
+  'checkpointLabel_',
+  // PR 3: src/teams.ts
+  'teamsAll_',
+  'teamByToken_',
+  'trackOf_',
+  'isDemo_',
+  'createLinks_',
+  'randomToken_',
+  'pad2_',
+];
+
+// Apps Script services, plus the settings cache that src/config.ts keeps as a real global
+// because legacy code still assigns it directly (see docs/legacy-map.md).
+const APPS_SCRIPT_GLOBALS = {
+  ...Object.fromEntries(
+    [
+      'SpreadsheetApp',
+      'DriveApp',
+      'MailApp',
+      'ScriptApp',
+      'PropertiesService',
+      'LockService',
+      'Utilities',
+      'ContentService',
+      'Logger',
+    ].map((name) => [name, 'readonly' as const]),
+  ),
+  SETTINGS_CACHE_: 'writable' as const,
+};
 
 const copySource = readFileSync(new URL('../src/legacy.js', import.meta.url), 'utf8');
 const original = topLevelDeclarations(legacySource);
@@ -37,6 +103,20 @@ describe('src/legacy.js', () => {
       (line) => !/^(function |var |\/\*|\/\/|import |export )/.test(line),
     );
     expect(added).toEqual([]);
+  });
+
+  it('declares or imports every name it uses', async () => {
+    // A moved function that is still called but not imported would only fail when that line
+    // runs, because the bundle treats unknown names as globals.
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: {
+        languageOptions: { sourceType: 'module', ecmaVersion: 2019, globals: APPS_SCRIPT_GLOBALS },
+        rules: { 'no-undef': 'error' },
+      },
+    });
+    const [result] = await eslint.lintText(copySource, { filePath: 'legacy.js' });
+    expect(result?.messages.map((m) => `${m.line}: ${m.message}`)).toEqual([]);
   });
 
   it('parses every top-level legacy declaration separately', () => {

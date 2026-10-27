@@ -12,6 +12,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import vm from 'node:vm';
+import { vi } from 'vitest';
 import { build } from '../../scripts/build.js';
 import { FakeBlob, FakeGoogle, type Cell, type FakeSheet } from './fake-google.js';
 
@@ -198,4 +199,37 @@ export async function runBoth<T>(scenario: (app: App) => T): Promise<{ legacy: T
     legacy: json(scenario(new App(legacy))),
     bundle: json(scenario(new App(await bundleImplementation()))),
   };
+}
+
+/**
+ * legacy/Code.gs loaded into one global scope over the given fakes, so a test can call its
+ * private functions directly and compare them with the typed modules that replace them.
+ * Like one Apps Script run: state such as the settings cache lasts until you load it again.
+ */
+export function loadLegacy(google: FakeGoogle, now = '2026-12-07T10:00:00+02:00') {
+  const context = vm.createContext(google.globals());
+  vm.runInContext(fixedClock(Date.parse(now)), context);
+  legacy.script.runInContext(context);
+  return {
+    call(name: string, ...args: unknown[]): unknown {
+      const fn: unknown = vm.runInContext(name, context);
+      if (typeof fn !== 'function') throw new Error(`${name} is not a legacy function`);
+      return fn(...args);
+    },
+    get(name: string): unknown {
+      return vm.runInContext(name, context);
+    },
+  };
+}
+
+/**
+ * Installs fresh fakes as the Apps Script globals, for tests that call src/ modules directly.
+ * Vitest removes them after each test (unstubGlobals in vitest.config.ts).
+ */
+export function useFakeGoogle(): FakeGoogle {
+  const google = new FakeGoogle();
+  for (const [name, service] of Object.entries(google.globals())) vi.stubGlobal(name, service);
+  // Each test is a fresh run: forget settings cached by an earlier one (see src/config.ts).
+  globalThis.SETTINGS_CACHE_ = null;
+  return google;
 }

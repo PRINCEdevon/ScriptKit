@@ -10,8 +10,8 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 | #   | Branch                           | Title                                               | Status                           |
 | --- | -------------------------------- | --------------------------------------------------- | -------------------------------- |
 | 1   | `chore/scaffold`                 | chore: initialize ScriptKit development environment | Merged                           |
-| 2   | `refactor/legacy-runtime`        | refactor: integrate legacy application into build   | Ready for review (branch pushed) |
-| 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Not started                      |
+| 2   | `refactor/legacy-runtime`        | refactor: integrate legacy application into build   | Merged                           |
+| 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Ready for review (branch pushed) |
 | 4   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Not started                      |
 | 5   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Not started                      |
 | 6   | `refactor/notifications`         | refactor: migrate email and scheduled jobs          | Not started                      |
@@ -29,7 +29,7 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 3. **Sheets and teams.** Table reading and writing (`table_`, `appendRow_`, `setCells_`,
    `safe_`), settings, team lookup by private code, report links, number parsing, dates and
    reporting-week selection.
-4. **Reports and pipeline.** `submitReport_`, `validate_`, `recordReport_`,
+4. **Reports and pipeline.** `reportsAll_`, `submitReport_`, `validate_`, `recordReport_`,
    `submitCorrection_`, pipeline snapshots and proof uploads, keeping the HTTP contract.
 5. **Feedback and scoreboard.** `RULES`, `buildFeedback_`, `scoreboard_` and totals, with
    characterization tests that run the same fixtures through the legacy and new code.
@@ -70,6 +70,12 @@ Sheet is suitable):
 3. Update the staging web app deployment to a new version, so `/exec` serves the bundle.
 4. With `send_all_emails_to` set, work through the URA end-to-end test script (kept with
    the test Sheet in the programme's Drive folder, not in this repository).
+
+### Record
+
+| Build | Where                                    | Checked                                                            | Not checked                |
+| ----- | ---------------------------------------- | ------------------------------------------------------------------ | -------------------------- |
+| PR 2  | A personal test project bound to a Sheet | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`) |
 
 ## Legacy entrypoints
 

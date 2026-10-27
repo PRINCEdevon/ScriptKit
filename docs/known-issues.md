@@ -20,7 +20,8 @@ week 10 digest goes out every Tuesday until automatic emails are turned off.
 
 ### Reporting never closes after the last week (Confirmed)
 
-`currentWeek_` returns the latest week whose open date has passed, with no end date. After
+`currentWeek_` (now `currentWeek` in `src/dates.ts`) returns the latest week whose open date
+has passed, with no end date. After
 week 10, the report page keeps showing week 10 and `submitReport_` keeps accepting late week
 10 reports. Whether the programme should close needs a product decision.
 
@@ -62,10 +63,10 @@ directly to the web app.
 
 ### Money is stored with cents but always shown rounded (Confirmed)
 
-`validate_` keeps money to two decimal places, but `money_` (used in feedback, digests and the
-page) rounds to whole units, so 299.50 is shown as 300. `parseNumber_` also removes commas,
-so a decimal comma such as `1,5` is read as 15, and it removes the letter R anywhere in the
-value.
+`validate_` keeps money to two decimal places, but `money_` (now `money` in `src/config.ts`,
+used in feedback, digests and the page) rounds to whole units, so 299.50 is shown as 300.
+`parseNumber_` (now `parseNumber` in `src/utils.ts`) also removes commas, so a decimal comma
+such as `1,5` is read as 15, and it removes the letter R anywhere in the value.
 
 ### Proof upload limits differ from the message, and types are not checked (Confirmed)
 
@@ -76,11 +77,11 @@ private to the script owner's Drive.
 
 ### Number-only team IDs never match their reports (Confirmed)
 
-`reportsAll_` converts each report's team ID to text, but `teamsAll_` returns the Teams cell
-as stored. A team ID typed as a number (such as 101) is read as a number, so
-`r.team_id === team.team_id` is never true: the team never sees its reports, and the
-duplicate check in `submitReport_` does not stop repeat submissions. IDs created by "Create
-missing team links" (T01, T02, ...) are text and are not affected.
+`reportsAll_` converts each report's team ID to text, but `teamsAll_` (now `allTeams` in
+`src/teams.ts`) returns the Teams cell as stored. A team ID typed as a number (such as 101) is
+read as a number, so `r.team_id === team.team_id` is never true: the team never sees its
+reports, and the duplicate check in `submitReport_` does not stop repeat submissions. IDs
+created by "Create missing team links" (T01, T02, ...) are text and are not affected.
 
 ### Corrections are saved without the script lock (Needs runtime test)
 
@@ -92,10 +93,10 @@ on the same row, and one would be lost.
 
 ### A team's link is its only credential (By design)
 
-The private code in a team's link (`teamByToken_`) is all that is needed to read the team's
-history and submit reports or corrections for it. Codes do not expire. The team view also
-includes the scoreboard, which shows every active team's name and money received
-(`scoreboard_`), and error responses include raw exception messages from `doGet` and
+The private code in a team's link (`teamByToken` in `src/teams.ts`) is all that is needed to
+read the team's history and submit reports or corrections for it. Codes do not expire. The
+team view also includes the scoreboard, which shows every active team's name and money
+received (`scoreboard_`), and error responses include raw exception messages from `doGet` and
 `doPost`. The link email asks teams to keep the link private.
 
 ## Feedback wording

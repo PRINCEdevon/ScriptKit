@@ -9,5 +9,7 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',
+    // Tests that install fake Apps Script globals get them removed again after each test.
+    unstubGlobals: true,
   },
 });
