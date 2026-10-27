@@ -4,12 +4,14 @@ import { join } from 'node:path';
 import vm from 'node:vm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { build } from '../scripts/build.js';
+import { handlerNames, legacySource, publicFunctions } from './support/legacy-source.js';
 
 const tempDir = mkdtempSync(join(tmpdir(), 'scriptkit-build-'));
 let code = '';
+let entrypoints: string[] = [];
 
 beforeAll(async () => {
-  await build({ outdir: join(tempDir, 'dist') });
+  ({ entrypoints } = await build({ outdir: join(tempDir, 'dist') }));
   code = readFileSync(join(tempDir, 'dist', 'Code.js'), 'utf8');
 });
 
@@ -26,18 +28,24 @@ describe('Apps Script bundle', () => {
     expect(code).not.toMatch(/\brequire\(/);
   });
 
-  it('declares each entrypoint as a top-level function', () => {
-    expect(code).toMatch(/^function scriptkitSmokeTest\(/m);
+  it('exposes exactly the functions the legacy script made callable', () => {
+    const topLevel = [...code.matchAll(/^function ([\w$]+)\(/gm)].map((match) => match[1]);
+    expect(entrypoints).toEqual(publicFunctions(legacySource));
+    expect(topLevel.sort()).toEqual(publicFunctions(legacySource));
   });
 
-  it('exposes callable entrypoints when run as one classic script, as Apps Script does', () => {
-    const logged: unknown[] = [];
-    const context = vm.createContext({ Logger: { log: (value: unknown) => logged.push(value) } });
-    vm.runInContext(code, context);
+  it('exposes every handler that the legacy menu and triggers call by name', () => {
+    expect(handlerNames(legacySource).length).toBeGreaterThan(10);
+    for (const name of handlerNames(legacySource)) expect(entrypoints).toContain(name);
+  });
 
-    const smokeTest = vm.runInContext('scriptkitSmokeTest', context);
-    expect(typeof smokeTest).toBe('function');
-    expect(smokeTest()).toBe('ScriptKit bundle loaded.');
-    expect(logged).toEqual(['ScriptKit bundle loaded.']);
+  it('loads as one classic script without calling any Google service', () => {
+    // Apps Script evaluates the whole script before every call, including simple triggers
+    // that run with limited authorization, so loading must not touch SpreadsheetApp and co.
+    const context = vm.createContext({});
+    vm.runInContext(code, context);
+    for (const name of entrypoints) {
+      expect(typeof vm.runInContext(name, context), name).toBe('function');
+    }
   });
 });

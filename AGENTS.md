@@ -12,6 +12,9 @@ works and `docs/migration-plan.md` for what is being done now.
 - `src/main.ts` exports every Apps Script entrypoint. The build turns each export into a
   top-level function. Menus and installed triggers call these by name, so never rename one.
 - `legacy/Code.gs` is the behaviour reference. Never edit it; a test checks its hash.
+- `src/legacy.js` is its transitional copy in the build. Only ever delete migrated
+  declarations from it and add imports; list each deletion in `EXTRACTED` in
+  `tests/legacy-source.test.ts`. `docs/legacy-map.md` shows what goes where.
 - The HTML frontend in `web/` is deployed separately. Preserve its API contract.
 - No frameworks, dependency injection, classes-as-services or layered folders. Prefer a flat
   set of feature modules (`reports.ts`, `feedback.ts`, ...), created when they are needed.
@@ -22,7 +25,9 @@ works and `docs/migration-plan.md` for what is being done now.
 - Pure functions for business logic; avoid `any`.
 - Comments explain business rules and Apps Script quirks, not what the code says.
 - Follow ESLint and Prettier (`pnpm lint`, `pnpm format`).
-- Add tests with every migrated or changed behaviour. Tests never touch real Google services.
+- Add tests with every migrated or changed behaviour. Tests never touch real Google services:
+  use the fakes in `tests/support/`. The baseline tests (`tests/baseline/`) compare the
+  bundle with `legacy/Code.gs` and must keep passing unchanged through every refactor.
 - Do not reformat or rename code outside the change. Never edit `dist/`.
 
 ## Migration

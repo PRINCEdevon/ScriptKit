@@ -3,16 +3,36 @@
  *
  * Every function exported from this file becomes a top-level function in dist/Code.js
  * (see scripts/build.js). Apps Script calls web app handlers (doGet, doPost), menu items and
- * trigger handlers by name, so they must be exported from here.
+ * trigger handlers by name, so they must all be exported from here, under their legacy names:
+ * the Sheet's menu and installed triggers refer to them by those names.
  *
- * The Revenue Accelerator is not in the build yet (see docs/migration-plan.md). Until it is,
- * the only entrypoint is a smoke test showing that the bundle loads and its functions are
- * callable.
+ * During the migration they come from src/legacy.js; as each one moves into a typed module,
+ * its export here moves with it.
  */
-
-/** Run from the Apps Script editor to confirm that a ScriptKit bundle is loaded. */
-export function scriptkitSmokeTest(): string {
-  const message = 'ScriptKit bundle loaded.';
-  Logger.log(message);
-  return message;
-}
+export {
+  // Web app (the report page).
+  doGet,
+  doPost,
+  // Simple trigger that builds the menu.
+  onOpen,
+  // Menu and script editor.
+  setup,
+  checkSetup,
+  menuShowThisWeek,
+  menuShowAll,
+  menuSendReplies,
+  menuRefreshLog,
+  menuPreparePage,
+  menuCreateLinks,
+  menuEmailLinks,
+  menuEmailsOn,
+  menuEmailsOff,
+  menuAddDemo,
+  menuRemoveDemo,
+  menuRemindersNow,
+  menuDigestsNow,
+  // Time-driven triggers.
+  autoMondayReminder,
+  autoDigests,
+  autoDaily,
+} from './legacy.js';
