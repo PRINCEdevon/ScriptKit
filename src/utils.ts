@@ -29,3 +29,18 @@ export function median(values: number[]): number {
     ? (sorted[middle] as number)
     : Math.round(((sorted[middle - 1] as number) + (sorted[middle] as number)) / 2);
 }
+
+/** A form answer as text: trimmed and cut to `max` characters (null and undefined become ""). */
+export function clean(value: unknown, max: number): string {
+  return String(value === undefined || value === null ? '' : value)
+    .trim()
+    .slice(0, max);
+}
+
+/** A comma-separated cell as a list without blanks: "Ana, Ben," becomes ["Ana", "Ben"]. */
+export function listOf(value: unknown): string[] {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(String);
+}

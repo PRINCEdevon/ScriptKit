@@ -7,8 +7,8 @@ the 21 entrypoints listed in [migration-plan.md](migration-plan.md).
 
 ## Shared state
 
-- **Constants:** `LOG_TAB`, `DEFAULT_WEEKS`, `OLD_RULE_TEXT` and `OLD_DEFAULTS` are still in
-  `src/legacy.js`. `TABS` (the spreadsheet schema) is in `src/sheets.ts`; `DEFAULT_TZ` and
+- **Constants:** `DEFAULT_WEEKS`, `OLD_RULE_TEXT` and `OLD_DEFAULTS` are still in
+  `src/legacy.js`; `LOG_TAB` is in `src/reports.ts`. `TABS` (the spreadsheet schema) is in `src/sheets.ts`; `DEFAULT_TZ` and
   `DEFAULT_SETTINGS` in `src/config.ts`; `STAGE_NAMES` in `src/pipeline.ts`; `DEFAULT_RULES`
   in `src/feedback.ts`.
 - **Per-execution cache:** `SETTINGS_CACHE_`, filled by `settings()` and cleared by every
@@ -36,9 +36,11 @@ the 21 entrypoints listed in [migration-plan.md](migration-plan.md).
 | `teamsAll_`, `teamByToken_`, `trackOf_`, `isDemo_`, `createLinks_`, `randomToken_`, `pad2_`          | `src/teams.ts`: `allTeams`, `teamByToken`, `trackOf`, `isDemo`, `createLinks` (plan in the pure `planLinks`), `randomToken`, `reportLink`                      |
 | `num_`, `parseNumber_`                                                                               | `src/utils.ts`: `toNumber`, `parseNumber`                                                                                                                      |
 
-Still in `src/legacy.js`, moving with their first typed caller (typed modules never import
-from `src/legacy.js`): the small helpers `clean_`, `listOf_`,
-`find_`, `byWeek_`, `lastBefore_`, `uniq_`, `median_` and `parseJson_`.
+Helpers that typed code needed moved with their first typed caller (typed modules never
+import from `src/legacy.js`): `median_` in PR 4; `clean_`, `listOf_`, `byWeek_`,
+`lastBefore_`, `uniq_` and `parseJson_` in PR 5. `find_` stays in `src/legacy.js` for the
+code that still uses it; typed code uses `Array.prototype.find` (with `?? null` where the
+original's `null` matters).
 
 ## PR 4: feedback and scoreboard (done)
 
@@ -52,20 +54,18 @@ from `src/legacy.js`): the small helpers `clean_`, `listOf_`,
 The feedback context (previous report, totals, stage moves, stuck organisations, cohorts) is
 still worked out by `recordReport_`, which moves in PR 5.
 
-## PR 5: reports and pipeline
+## PR 5: reports and pipeline (done)
 
-| Function                                          | Role                                                                                                | Uses                                 |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `doGet` → `getTeamView_`                          | Everything the report page shows: status, previous goals, pipeline, totals, history, scoreboard.    | most of PR 3, `scoreboard_`, `json_` |
-| `doPost` → `submitReport_`, `submitCorrection_`   | Receive a report or a correction.                                                                   | `json_`                              |
-| `submitReport_`                                   | Under the script lock: check the code, week and duplicates, then validate, save proof and record.   | LockService, `refreshReportLog_`     |
-| `validate_`                                       | Check and clean the submitted answers and pipeline.                                                 | `parseNumber_`, `clean_`             |
-| `recordReport_`                                   | Compare with earlier reports and pipeline, build feedback, append the rows. Also used by demo data. | `buildFeedback_`, `appendRow_`       |
-| `reportsAll_`                                     | Every report, with its numbers as numbers and its team ID as text.                                  | `table_`, `num_`                     |
-| `snapshotFor_`, `weekInfo_`                       | One week's pipeline snapshot by organisation; week labels for the page.                             |                                      |
-| `saveProof_`, `proofRootFolder_`, `parentFolder_` | Save proof files in Drive next to the Sheet.                                                        | DriveApp, Utilities, `setSetting_`   |
-| `json_`                                           | JSON response.                                                                                      | ContentService                       |
-| `refreshReportLog_`, `LOG_TAB`                    | Rebuild the Report log tab (also from the menu, setup, demo data and the daily trigger).            | Sheets                               |
+The web app (`doGet`, `doPost`) no longer runs any legacy code.
+
+| Legacy                                                                            | Now                                                                                                              |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `doGet`, `doPost`, `json_`, `getTeamView_`, `weekInfo_`, `parseJson_`             | `src/api.ts`: `doGet`, `doPost`, `teamView`, `weekInfo` (the entrypoints are exported by `main.ts`)              |
+| `reportsAll_`, `validate_`, `recordReport_`, `submitReport_`, `submitCorrection_` | `src/reports.ts`: `readReports`, `validateReport`, `recordReport`, `submitReport`, `submitCorrection`            |
+| `refreshReportLog_`, `LOG_TAB`, `byWeek_`, `lastBefore_`, `uniq_`                 | `src/reports.ts`: `refreshReportLog`, `LOG_TAB`, `byWeek`, `lastBefore` (`uniq_` folded into `pipelineProgress`) |
+| the pipeline comparison inside `recordReport_`, `snapshotFor_`                    | `src/pipeline.ts`: `pipelineProgress` (pure), `snapshotFor`                                                      |
+| `saveProof_`, `proofRootFolder_`, `parentFolder_`                                 | `src/drive.ts`: `saveProof`, `proofFolder`, `parentFolder`                                                       |
+| `clean_`, `listOf_`                                                               | `src/utils.ts`: `clean`, `listOf`                                                                                |
 
 ## PR 6: notifications and scheduled jobs
 

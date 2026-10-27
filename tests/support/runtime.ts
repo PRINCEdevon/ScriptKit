@@ -233,3 +233,12 @@ export function useFakeGoogle(): FakeGoogle {
   globalThis.SETTINGS_CACHE_ = null;
   return google;
 }
+
+/** A function's result, or its error message, so that failures can be compared too. */
+export function outcome(fn: () => unknown): { value: unknown } | { error: string } {
+  try {
+    return { value: json(fn()) };
+  } catch (error) {
+    return { error: String((error as Error).message) };
+  }
+}

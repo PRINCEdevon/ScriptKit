@@ -4,6 +4,9 @@ Found by reading `legacy/Code.gs`. They are recorded here so the migration can p
 behaviour deliberately; none are fixed in the refactoring PRs. Each fix should be a separate
 `fix:` PR with a test.
 
+Each issue names the function in `legacy/Code.gs` where it was found. The typed modules keep
+every one of them as it is; [legacy-map.md](legacy-map.md) shows where each function lives now.
+
 - **Confirmed**: the code clearly behaves this way.
 - **Needs runtime test**: plausible from the code, but depends on Apps Script or Sheets
   behaviour that should be reproduced in a staging copy first.
@@ -113,3 +116,11 @@ From week 6, the `growth` rule (in `src/feedback.ts`) compares money received wi
 report. When the amount is exactly the same, the note correctly says "unchanged at 0%", but the
 check returns no flag value, so the rule's default flag ("Money down") is shown to the
 programme manager anyway. `tests/feedback.test.ts` pins the current behaviour.
+
+### An organisation called "Constructor" is "listed twice" (Confirmed)
+
+`validate_` (now `validateReport` in `src/reports.ts`) remembers organisation names, lowercased,
+in a plain JavaScript object. Two lowercase names already exist on every such object,
+`constructor` and `__proto__`, so an organisation called "Constructor" (or `__proto__`) is
+reported as "listed twice" and the report cannot be sent. Unlikely with real names;
+`tests/reports.test.ts` pins the current behaviour.

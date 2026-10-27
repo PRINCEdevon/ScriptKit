@@ -9,10 +9,10 @@
  * During the migration they come from src/legacy.js; as each one moves into a typed module,
  * its export here moves with it.
  */
+// Web app (the report page).
+export { doGet, doPost } from './api.js';
+
 export {
-  // Web app (the report page).
-  doGet,
-  doPost,
   // Simple trigger that builds the menu.
   onOpen,
   // Menu and script editor.

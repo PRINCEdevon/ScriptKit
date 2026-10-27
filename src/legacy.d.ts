@@ -1,12 +1,6 @@
 // Types for the entrypoints of src/legacy.js, the untyped transitional copy of legacy/Code.gs.
 // Each declaration disappears when its function moves into a typed module.
 
-type TextOutput = GoogleAppsScript.Content.TextOutput;
-
-// Web app (the report page).
-export function doGet(e?: GoogleAppsScript.Events.DoGet): TextOutput;
-export function doPost(e?: GoogleAppsScript.Events.DoPost): TextOutput;
-
 // Simple trigger: builds the Revenue Accelerator menu when the Sheet opens.
 export function onOpen(e?: GoogleAppsScript.Events.SheetsOnOpen): void;
 

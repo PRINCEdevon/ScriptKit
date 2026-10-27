@@ -14,13 +14,14 @@ live programme, compare it with that programme's template in Drive.
 ## How the page reaches the backend
 
 The page reads the team's private code from its own URL (`?t=<code>`) and calls the Apps
-Script web app URL (`WEB_APP_URL` in the page):
+Script web app URL (`WEB_APP_URL` in the page). The handlers are in `src/api.ts` and
+`src/reports.ts`:
 
-| Request                                              | Handler                        | Purpose                                     |
-| ---------------------------------------------------- | ------------------------------ | ------------------------------------------- |
-| `GET <web app>?action=get&t=<code>`                  | `doGet` → `getTeamView_`       | Everything the page shows for the team.     |
-| `POST <web app>` with `{"action":"submit","t",...}`  | `doPost` → `submitReport_`     | Send this week's report and proof files.    |
-| `POST <web app>` with `{"action":"correct","t",...}` | `doPost` → `submitCorrection_` | Add a correction note to an earlier report. |
+| Request                                              | Handler                       | Purpose                                     |
+| ---------------------------------------------------- | ----------------------------- | ------------------------------------------- |
+| `GET <web app>?action=get&t=<code>`                  | `doGet` → `teamView`          | Everything the page shows for the team.     |
+| `POST <web app>` with `{"action":"submit","t",...}`  | `doPost` → `submitReport`     | Send this week's report and proof files.    |
+| `POST <web app>` with `{"action":"correct","t",...}` | `doPost` → `submitCorrection` | Add a correction note to an earlier report. |
 
 Every response is JSON. Failures look like `{ "ok": false, "error": "<code>", "message": "..." }`,
 where the code is one of `link`, `stopped`, `closed`, `duplicate`, `invalid`, `unknown` or
