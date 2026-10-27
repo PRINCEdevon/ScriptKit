@@ -67,16 +67,19 @@ The web app (`doGet`, `doPost`) no longer runs any legacy code.
 | `saveProof_`, `proofRootFolder_`, `parentFolder_`                                 | `src/drive.ts`: `saveProof`, `proofFolder`, `parentFolder`                                                       |
 | `clean_`, `listOf_`                                                               | `src/utils.ts`: `clean`, `listOf`                                                                                |
 
-## PR 6: notifications and scheduled jobs
+## PR 6: notifications and scheduled jobs (done)
 
-| Function                                                        | Role                                                                 |
-| --------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `sendMail_`, `emailDestination_`                                | Every email goes through `sendMail_`, which applies test mode.       |
-| `pretendBlocksAutoEmails_`                                      | Stops automatic emails on a pretend date unless test mode is on.     |
-| `autoMondayReminder` → `sendReminders_` → `teamsMissing_`       | Reminders on the due day. `menuRemindersNow` sends them on demand.   |
-| `autoDigests` → `sendDigests_` → `digestBlock_`                 | Mentor digests and the admin summary. `menuDigestsNow` on demand.    |
-| `menuSendReplies` → `sendTickedReplies_`                        | Email the replies ticked in the Reports tab.                         |
-| `menuEmailsOn`, `menuEmailsOff`, `removeTriggers_`, `autoDaily` | Create and remove the three time-driven triggers; daily log refresh. |
+All email now goes through typed code; `menuEmailLinks` (PR 7) imports `sendMail` and
+`emailDestination` under their legacy names.
+
+| Legacy                                                                      | Now                                                                                       |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `sendMail_`, `emailDestination_`, `pretendBlocksAutoEmails_`                | `src/email.ts`: `sendMail`, `emailDestination`, `autoEmailsBlocked`                       |
+| `autoMondayReminder`, `sendReminders_`, `teamsMissing_`, `menuRemindersNow` | `src/email.ts`: `autoMondayReminder`, `sendReminders`, `teamsMissing`, `menuRemindersNow` |
+| `autoDigests`, `sendDigests_`, `digestBlock_`, `menuDigestsNow`             | `src/email.ts`: `autoDigests`, `sendDigests`, `digestBlock`, `menuDigestsNow`             |
+| `menuSendReplies`, `sendTickedReplies_`                                     | `src/email.ts`: `menuSendReplies`, `sendTickedReplies`                                    |
+| `menuEmailsOn`, `menuEmailsOff`, `removeTriggers_`, `autoDaily`             | `src/triggers.ts`: the same names, with `removeTriggers`                                  |
+| `toast_`                                                                    | `src/sheets.ts`: `toast`                                                                  |
 
 ## PR 7: administration
 
@@ -89,4 +92,3 @@ The web app (`doGet`, `doPost`) no longer runs any legacy code.
 | `menuCreateLinks`, `menuEmailLinks`                                                                                     | Create links; email each team its link once.              |
 | `menuPreparePage` → `preparePage_`, `uploadSteps_`, `htmlEscape_`                                                       | Fill in the report page template from Drive.              |
 | `menuAddDemo` → `addDemo_`, `menuRemoveDemo` → `removeDemo_`                                                            | Demo teams and reports, recorded through `recordReport_`. |
-| `toast_`                                                                                                                | Status messages in the Sheet.                             |

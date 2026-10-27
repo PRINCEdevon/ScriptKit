@@ -13,8 +13,8 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 | 2   | `refactor/legacy-runtime`        | refactor: integrate legacy application into build   | Merged                           |
 | 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Merged                           |
 | 4   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Merged                           |
-| 5   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Ready for review (branch pushed) |
-| 6   | `refactor/notifications`         | refactor: migrate email and scheduled jobs          | Not started                      |
+| 5   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Merged                           |
+| 6   | `refactor/notifications`         | refactor: migrate email and scheduled jobs          | Ready for review (branch pushed) |
 | 7   | `refactor/admin-and-integration` | refactor: complete administration and integration   | Not started                      |
 
 ## The steps
@@ -79,11 +79,16 @@ Sheet is suitable):
 
 ### Record
 
-| Build | Where                                        | Checked                                                            | Not checked                                           |
-| ----- | -------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------- |
-| PR 2  | A personal test project bound to a Sheet     | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                            |
-| PR 3  | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                            |
-| PR 4  | The same test project (pushed and read back) | Sheet checks pending                                               | Web app (`doGet`/`doPost`), which runs the scoreboard |
+**Still to do:** run the web app (`doGet`/`doPost`) on Google: a deployment in the test project,
+loading a team's page, one submission and one correction. It has been deferred so far and must
+happen before the live project switches to the bundle.
+
+| Build | Where                                        | Checked                                                            | Not checked                                             |
+| ----- | -------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
+| PR 2  | A personal test project bound to a Sheet     | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                              |
+| PR 3  | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                              |
+| PR 4  | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`), which runs the scoreboard   |
+| PR 5  | Not pushed                                   | Nothing                                                            | Everything: the first build whose web app is typed code |
 
 ## Legacy entrypoints
 
