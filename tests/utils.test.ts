@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { median, parseNumber, toNumber } from '../src/utils.js';
+import { clean, listOf, median, parseNumber, toNumber } from '../src/utils.js';
 import { FakeGoogle } from './support/fake-google.js';
-import { loadLegacy } from './support/runtime.js';
+import { json, loadLegacy } from './support/runtime.js';
 
 const SAMPLES: unknown[] = [
   0,
@@ -80,5 +80,27 @@ describe('median', () => {
     }
     expect(median([5, 3, 8, 2])).toBe(4);
     expect(median([1, 2])).toBe(2);
+  });
+});
+
+describe('clean and listOf', () => {
+  it('trim, cut and split form answers like the originals', () => {
+    const legacy = loadLegacy(new FakeGoogle());
+    for (const value of [
+      '  Ana  ',
+      'x'.repeat(30),
+      '',
+      null,
+      undefined,
+      0,
+      12.5,
+      false,
+      'a, b,, c ,',
+    ]) {
+      expect(clean(value, 10), String(value)).toBe(legacy.call('clean_', value, 10));
+      expect(listOf(value), String(value)).toEqual(json(legacy.call('listOf_', value)));
+    }
+    expect(clean(null, 5)).toBe('');
+    expect(listOf('Ana One, Ben Two, ,')).toEqual(['Ana One', 'Ben Two']);
   });
 });

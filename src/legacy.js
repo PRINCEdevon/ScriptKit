@@ -32,11 +32,16 @@ import {
   readWeeks as weeks_,
 } from './dates.js';
 import {
+  parentFolder as parentFolder_,
+  saveProof as saveProof_,
+} from './drive.js';
+import {
   buildFeedback as buildFeedback_,
   DEFAULT_RULES,
 } from './feedback.js';
 import {
   latestSnapshot as latestSnapshot_,
+  snapshotFor as snapshotFor_,
   STAGE_NAMES,
 } from './pipeline.js';
 import {
@@ -59,6 +64,8 @@ import {
   trackOf as trackOf_,
 } from './teams.js';
 import {
+  clean as clean_,
+  listOf as listOf_,
   toNumber as num_,
   parseNumber as parseNumber_,
 } from './utils.js';
@@ -373,31 +380,6 @@ function submitCorrection_(body) {
     submitted_by: clean_(body.submitted_by, 120), note: note
   });
   return { ok: true };
-}
-
-function saveProof_(team, week, files) {
-  if (!files || !files.length) return [];
-  var root = proofRootFolder_();
-  var sub = root.getFoldersByName(team.team_name);
-  var folder = sub.hasNext() ? sub.next() : root.createFolder(team.team_name);
-  return files.map(function (f, i) {
-    var name = 'Week ' + week + ' - ' + (clean_(f.name, 100) || ('proof ' + (i + 1)));
-    var blob = Utilities.newBlob(Utilities.base64Decode(String(f.data)), String(f.type || 'application/octet-stream'), name);
-    return folder.createFile(blob).getUrl();
-  });
-}
-
-function proofRootFolder_() {
-  var id = settings_().proof_folder_id;
-  if (id) { try { return DriveApp.getFolderById(String(id)); } catch (e) { /* recreate below */ } }
-  var folder = parentFolder_().createFolder(shortName_() + ' proof of payment');
-  setSetting_('proof_folder_id', folder.getId());
-  return folder;
-}
-
-function parentFolder_() {
-  var parents = DriveApp.getFileById(ss_().getId()).getParents();
-  return parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
 }
 
 /* ============================== Preparing the report page ============================== */
@@ -1020,17 +1002,9 @@ function reportsAll_() {
   });
 }
 
-function snapshotFor_(rows, week) {
-  var m = {};
-  rows.forEach(function (r) { if (r.week === week) m[String(r.organisation).toLowerCase()] = r.stage; });
-  return m;
-}
-
 /* ============================== Small utilities ============================== */
 
 function fmtStamp_(d) { return Utilities.formatDate(d, tz_(), 'yyyy-MM-dd HH:mm'); }
-function clean_(v, max) { return String(v === undefined || v === null ? '' : v).trim().slice(0, max); }
-function listOf_(v) { return String(v || '').split(',').map(function (s) { return s.trim(); }).filter(String); }
 function find_(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
 function byWeek_(a, b) { return a.week - b.week; }
 function lastBefore_(mine, week) { var p = null; mine.forEach(function (r) { if (r.week < week) p = r; }); return p; }

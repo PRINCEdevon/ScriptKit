@@ -72,6 +72,13 @@ const EXTRACTED: string[] = [
   'buildFeedback_',
   'fill_',
   'median_',
+  // PR 5: src/drive.ts, src/pipeline.ts and src/utils.ts
+  'saveProof_',
+  'proofRootFolder_',
+  'parentFolder_',
+  'snapshotFor_',
+  'clean_',
+  'listOf_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global
