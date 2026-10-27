@@ -79,6 +79,17 @@ const EXTRACTED: string[] = [
   'snapshotFor_',
   'clean_',
   'listOf_',
+  // PR 5: src/reports.ts
+  'LOG_TAB',
+  'reportsAll_',
+  'validate_',
+  'recordReport_',
+  'submitReport_',
+  'submitCorrection_',
+  'refreshReportLog_',
+  'byWeek_',
+  'lastBefore_',
+  'uniq_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

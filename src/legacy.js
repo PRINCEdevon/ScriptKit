@@ -33,17 +33,24 @@ import {
 } from './dates.js';
 import {
   parentFolder as parentFolder_,
-  saveProof as saveProof_,
 } from './drive.js';
 import {
-  buildFeedback as buildFeedback_,
   DEFAULT_RULES,
 } from './feedback.js';
 import {
   latestSnapshot as latestSnapshot_,
-  snapshotFor as snapshotFor_,
   STAGE_NAMES,
 } from './pipeline.js';
+import {
+  byWeek as byWeek_,
+  lastBefore as lastBefore_,
+  LOG_TAB,
+  recordReport as recordReport_,
+  refreshReportLog as refreshReportLog_,
+  readReports as reportsAll_,
+  submitCorrection as submitCorrection_,
+  submitReport as submitReport_,
+} from './reports.js';
 import {
   scoreboard as scoreboard_,
   totals as totals_,
@@ -64,10 +71,8 @@ import {
   trackOf as trackOf_,
 } from './teams.js';
 import {
-  clean as clean_,
   listOf as listOf_,
   toNumber as num_,
-  parseNumber as parseNumber_,
 } from './utils.js';
 
 /**
@@ -86,8 +91,6 @@ import {
  * The setup guide explains how to install and publish it. You should not need to edit
  * anything below; settings, dates and feedback wording all live in tabs of the Sheet.
  */
-
-var LOG_TAB = 'Report log';
 
 var DEFAULT_WEEKS = [
   // week, covers from, covers to, opens, due, scoreboard
@@ -212,176 +215,6 @@ function weekInfo_(w) {
   };
 }
 
-/* ============================== Receiving a report ============================== */
-
-function submitReport_(body) {
-  var lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    var team = teamByToken_(String(body.t || ''));
-    if (!team) return { ok: false, error: 'link', message: 'This link does not work.' };
-    if (String(team.status).toLowerCase() === 'stopped') return { ok: false, error: 'stopped', message: 'Your team is no longer reporting.' };
-    var weeks = weeks_();
-    var today = todayStr_();
-    var cur = currentWeek_(weeks, today);
-    if (!cur) return { ok: false, error: 'closed', message: 'Reports are not open yet.' };
-    var already = find_(reportsAll_(), function (r) { return r.team_id === team.team_id && r.week === cur.week; });
-    if (already) return { ok: false, error: 'duplicate', message: 'Your team has already sent the report for week ' + cur.week + '. Reload the page to see it.' };
-
-    var checked = validate_(team, body);
-    if (checked.error) return { ok: false, error: 'invalid', message: checked.error };
-
-    var proofLinks = saveProof_(team, cur.week, body.files || []);
-    var late = today > dstr_(cur.due);
-    recordReport_(team, cur, weeks, checked.report, checked.pipeline, proofLinks, new Date(), late);
-    try { refreshReportLog_(); } catch (e) { /* the log is a convenience; never fail a submission over it */ }
-    return { ok: true };
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-function validate_(team, body) {
-  var r = body.report || {};
-  var track = trackOf_(team);
-  var out = {};
-  var founders = listOf_(team.founders);
-  out.submitted_by = clean_(r.submitted_by, 120);
-  if (!out.submitted_by) return { error: 'Please say who is filling in the report.' };
-  if (founders.length && founders.indexOf(out.submitted_by) < 0) return { error: 'Please choose your name from the list.' };
-
-  var numbers = ['revenue', 'asked', 'yes', 'no', 'not_yet', 'goal_asks', 'goal_revenue'];
-  if (track === 'Direct') numbers.push('new_customers');
-  for (var i = 0; i < numbers.length; i++) {
-    var k = numbers[i];
-    var v = parseNumber_(r[k]);
-    if (v === null || v < 0) return { error: 'Please enter a number (zero or more) for every number question.' };
-    out[k] = k === 'revenue' || k === 'goal_revenue' ? Math.round(v * 100) / 100 : Math.round(v);
-  }
-  if (track !== 'Direct') out.new_customers = 0;
-  if (out.yes + out.no + out.not_yet !== out.asked) return { error: 'In question 2, "said yes", "said no" and "not yet" must add up to the number you asked.' };
-
-  out.customers_said = clean_(r.customers_said, 2000);
-  if (!out.customers_said) return { error: 'Please tell us the most important thing customers told you (question 3).' };
-  out.changing = clean_(r.changing, 2000);
-  out.goal_text = clean_(r.goal_text, 500);
-  out.blocker = clean_(r.blocker, 2000);
-  out.asked_names = clean_(r.asked_names, 2000);
-  out.wants_reply = r.wants_reply ? 'Yes' : 'No';
-  out.mentor_call = r.mentor_call === 'Yes' ? 'Yes' : (r.mentor_call === 'No' ? 'No' : '');
-  if (!out.mentor_call) return { error: 'Please answer the mentor call question (question 6).' };
-  out.mentor_note = clean_(r.mentor_note, 1000);
-
-  var pipeline = [];
-  if (track === 'Organisation') {
-    var rows = Array.isArray(body.pipeline) ? body.pipeline : [];
-    if (rows.length > 60) return { error: 'Please list no more than 60 potential customers.' };
-    var seen = {};
-    for (var j = 0; j < rows.length; j++) {
-      var org = clean_(rows[j].organisation, 120);
-      var stage = parseNumber_(rows[j].stage);
-      if (!org) continue;
-      if (stage === null || stage < 0 || stage > 5) return { error: 'Please choose a stage for ' + org + '.' };
-      var key = org.toLowerCase();
-      if (seen[key]) return { error: org + ' is listed twice.' };
-      seen[key] = true;
-      pipeline.push({ organisation: org, stage: Math.round(stage), note: clean_(rows[j].note, 300) });
-    }
-  }
-  var files = Array.isArray(body.files) ? body.files : [];
-  if (files.length > 5) return { error: 'Please add no more than five proof files at a time.' };
-  for (var f = 0; f < files.length; f++) {
-    if (!files[f] || !files[f].data || String(files[f].data).length > 7500000) return { error: 'Each proof file must be smaller than 5 MB.' };
-  }
-  return { report: out, pipeline: pipeline };
-}
-
-/** Stores a checked report, its pipeline and its feedback. Used by real submissions and by the demo data. */
-function recordReport_(team, cur, weeks, rep, pipeline, proofLinks, when, late) {
-  var track = trackOf_(team);
-  var reports = reportsAll_();
-  var mine = reports.filter(function (r) { return r.team_id === team.team_id; }).sort(byWeek_);
-  var prev = lastBefore_(mine, cur.week);
-  var before = totals_(mine.filter(function (r) { return r.week < cur.week; }), 999);
-
-  // Pipeline: compare with the latest earlier snapshot.
-  var pipelineAll = tableRows_('pipeline').filter(function (r) { return r.team_id === team.team_id; });
-  var prevSnap = latestSnapshot_(pipelineAll, cur.week);
-  var prevMap = {};
-  prevSnap.forEach(function (o) { prevMap[String(o.organisation).toLowerCase()] = o.stage; });
-  var moved = 0, added = 0, furthest = 0;
-  pipeline.forEach(function (o) {
-    var k = o.organisation.toLowerCase();
-    if (prevMap.hasOwnProperty(k)) { if (o.stage > prevMap[k] && o.stage > 0) moved++; }
-    else added++;
-    if (o.stage > furthest) furthest = o.stage;
-  });
-  var stuck = [];
-  if (track === 'Organisation') {
-    var weeksSeen = uniq_(pipelineAll.map(function (r) { return r.week; })).filter(function (w) { return w < cur.week; }).sort(function (a, b) { return b - a; });
-    if (weeksSeen.length >= 2) {
-      var w1 = snapshotFor_(pipelineAll, weeksSeen[0]), w2 = snapshotFor_(pipelineAll, weeksSeen[1]);
-      pipeline.forEach(function (o) {
-        var k = o.organisation.toLowerCase();
-        if (o.stage > 0 && o.stage < 5 && w1[k] === o.stage && w2[k] === o.stage) stuck.push(o);
-      });
-    }
-  }
-
-  // Cohort: reports already in for this week on the same track, plus this one.
-  var teams = teamsAll_();
-  var trackOfTeam = {};
-  teams.forEach(function (t) { trackOfTeam[t.team_id] = trackOf_(t); });
-  var cohort = reports.filter(function (r) { return r.week === cur.week && trackOfTeam[r.team_id] === track && r.team_id !== team.team_id; });
-
-  var ctx = {
-    track: track, week: cur.week, weeks: weeks, rep: rep, prev: prev, before: before,
-    moved: moved, added: added, furthest: furthest, stuck: stuck, pipelineCount: pipeline.length,
-    cohortAsked: cohort.map(function (r) { return r.asked; }).concat([rep.asked]),
-    cohortMoved: cohort.map(function (r) { return r.orgs_moved; }).concat([moved]),
-    late: late
-  };
-  var feedback = buildFeedback_(ctx);
-  var stamp = when;
-
-  appendRow_('reports', {
-    week: cur.week, team_name: team.team_name, track: track, submitted_at: stamp, late: late ? 'Yes' : 'No',
-    submitted_by: rep.submitted_by,
-    flags: feedback.filter(function (f) { return f.flag; }).map(function (f) { return f.flag; }).join(' · '),
-    wants_reply: rep.wants_reply, reply: '', send_reply: false, reply_sent_at: '',
-    revenue: rep.revenue, new_customers: rep.new_customers, asked: rep.asked, yes: rep.yes, no: rep.no, not_yet: rep.not_yet,
-    orgs_moved: track === 'Organisation' ? moved : '', orgs_added: track === 'Organisation' ? added : '',
-    customers_said: rep.customers_said, changing: rep.changing,
-    goal_asks: rep.goal_asks, goal_revenue: rep.goal_revenue, goal_text: rep.goal_text,
-    blocker: rep.blocker, mentor_call: rep.mentor_call, mentor_note: rep.mentor_note, asked_names: rep.asked_names,
-    proof_links: (proofLinks || []).join('\n'),
-    feedback_text: feedback.map(function (f) { return f.lead + (f.detail ? ' ' + f.detail : ''); }).join('\n'),
-    team_id: team.team_id, report_id: Utilities.getUuid().slice(0, 8), feedback_json: JSON.stringify(feedback)
-  });
-  pipeline.forEach(function (o) {
-    appendRow_('pipeline', {
-      week: cur.week, team_id: team.team_id, team_name: team.team_name, organisation: o.organisation,
-      stage: o.stage, stage_name: STAGE_NAMES[o.stage], note: o.note, submitted_at: stamp
-    });
-  });
-  return feedback;
-}
-
-function submitCorrection_(body) {
-  var team = teamByToken_(String(body.t || ''));
-  if (!team) return { ok: false, error: 'link', message: 'This link does not work.' };
-  var week = parseNumber_(body.week);
-  var note = clean_(body.note, 1000);
-  if (!note) return { ok: false, error: 'invalid', message: 'Please write the correction.' };
-  var exists = find_(reportsAll_(), function (r) { return r.team_id === team.team_id && r.week === week; });
-  if (!exists) return { ok: false, error: 'invalid', message: 'There is no report for that week.' };
-  appendRow_('corrections', {
-    submitted_at: new Date(), team_id: team.team_id, team_name: team.team_name, week: week,
-    submitted_by: clean_(body.submitted_by, 120), note: note
-  });
-  return { ok: true };
-}
-
 /* ============================== Preparing the report page ============================== */
 
 function menuPreparePage() {
@@ -440,34 +273,6 @@ function preparePage_(url) {
 }
 
 function htmlEscape_(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-
-/* ============================== Report log ============================== */
-
-function refreshReportLog_() {
-  var ss = ss_();
-  var sh = ss.getSheetByName(LOG_TAB) || ss.insertSheet(LOG_TAB);
-  var weeks = weeks_();
-  var today = todayStr_();
-  var reports = reportsAll_();
-  var teams = teamsAll_().filter(function (t) { return t.team_name; });
-  var header = ['Team', 'Track', 'Status'].concat(weeks.map(function (w) { return 'Week ' + w.week; }), ['Sent', 'Late', 'Missing', 'Mentor calls']);
-  var rows = teams.map(function (t) {
-    var sent = 0, late = 0, missing = 0, calls = 0;
-    var cells = weeks.map(function (w) {
-      var r = find_(reports, function (x) { return x.team_id === t.team_id && x.week === w.week; });
-      if (r) { sent++; if (r.late === 'Yes') late++; if (r.mentor_call === 'Yes') calls++; return r.late === 'Yes' ? 'Late' : 'Sent'; }
-      if (dstr_(w.due) < today) { missing++; return 'Missing'; }
-      if (dstr_(w.opens) <= today) return 'Open';
-      return '';
-    });
-    return [t.team_name, trackOf_(t), t.status || 'Active'].concat(cells, [sent, late, missing, calls]);
-  });
-  sh.clearContents();
-  sh.getRange(1, 1, 1, header.length).setValues([header]).setFontWeight('bold');
-  if (rows.length) sh.getRange(2, 1, rows.length, header.length).setValues(rows);
-  sh.setFrozenRows(1);
-  sh.getRange(1, 1, 1, 1).setNote('Rebuilt automatically each day and after every report. Do not type in this tab.');
-}
 
 /* ============================== Emails ============================== */
 
@@ -994,21 +799,10 @@ function tidyReportRows_(t) {
   }
 }
 
-function reportsAll_() {
-  return table_('reports').rows.map(function (r) {
-    ['week', 'revenue', 'new_customers', 'asked', 'yes', 'no', 'not_yet', 'goal_asks', 'goal_revenue'].forEach(function (k) { r[k] = num_(r[k]); });
-    r.team_id = String(r.team_id);
-    return r;
-  });
-}
-
 /* ============================== Small utilities ============================== */
 
 function fmtStamp_(d) { return Utilities.formatDate(d, tz_(), 'yyyy-MM-dd HH:mm'); }
 function find_(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
-function byWeek_(a, b) { return a.week - b.week; }
-function lastBefore_(mine, week) { var p = null; mine.forEach(function (r) { if (r.week < week) p = r; }); return p; }
-function uniq_(a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); }
 function parseJson_(s, dflt) { try { return JSON.parse(String(s)); } catch (e) { return dflt; } }
 function toast_(msg) {
   try { ss_().toast(msg, 'Revenue Accelerator', 8); } catch (e) { Logger.log(msg); }
