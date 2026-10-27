@@ -97,6 +97,26 @@ const EXTRACTED: string[] = [
   'getTeamView_',
   'weekInfo_',
   'parseJson_',
+  // PR 6: src/email.ts and src/sheets.ts
+  'sendMail_',
+  'emailDestination_',
+  'pretendBlocksAutoEmails_',
+  'autoMondayReminder',
+  'teamsMissing_',
+  'sendReminders_',
+  'menuRemindersNow',
+  'autoDigests',
+  'sendDigests_',
+  'digestBlock_',
+  'menuDigestsNow',
+  'sendTickedReplies_',
+  'menuSendReplies',
+  'toast_',
+  // PR 6: src/triggers.ts
+  'menuEmailsOn',
+  'menuEmailsOff',
+  'removeTriggers_',
+  'autoDaily',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

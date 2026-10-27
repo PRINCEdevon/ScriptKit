@@ -9,7 +9,6 @@
 import {
   appendTableRow as appendRow_,
   DEFAULT_SETTINGS,
-  money as money_,
   pageName as pageName_,
   pageTemplateName as pageTemplateName_,
   reportName as reportName_,
@@ -22,7 +21,6 @@ import {
   dayKey as dstr_,
   longDate as longDate_,
   parseDay as parseDay_,
-  rangeLabel as rangeLabel_,
   today as todayStr_,
   timeZone as tz_,
   readWeeks as weeks_,
@@ -31,13 +29,19 @@ import {
   parentFolder as parentFolder_,
 } from './drive.js';
 import {
+  emailDestination as emailDestination_,
+  menuDigestsNow,
+  menuRemindersNow,
+  menuSendReplies,
+  sendMail as sendMail_,
+} from './email.js';
+import {
   DEFAULT_RULES,
 } from './feedback.js';
 import {
   LOG_TAB,
   recordReport as recordReport_,
   refreshReportLog as refreshReportLog_,
-  readReports as reportsAll_,
 } from './reports.js';
 import {
   lastDataRow as lastRealRow_,
@@ -45,13 +49,17 @@ import {
   spreadsheet as ss_,
   readTable as table_,
   TABS,
+  toast as toast_,
 } from './sheets.js';
 import {
   createLinks as createLinks_,
   isDemo as isDemo_,
   allTeams as teamsAll_,
-  trackOf as trackOf_,
 } from './teams.js';
+import {
+  menuEmailsOff,
+  menuEmailsOn,
+} from './triggers.js';
 import {
   listOf as listOf_,
   toNumber as num_,
@@ -158,135 +166,6 @@ function preparePage_(url) {
 
 function htmlEscape_(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-/* ============================== Emails ============================== */
-
-function sendTickedReplies_() {
-  var t = table_('reports');
-  var settings = settings_();
-  var teams = teamsAll_();
-  var sent = 0;
-  t.rows.forEach(function (r) {
-    if (r.send_reply !== true || !String(r.reply || '').trim() || r.reply_sent_at) return;
-    var team = find_(teams, function (x) { return x.team_id === r.team_id; });
-    if (!team) return;
-    var to = listOf_(team.founder_emails).join(',');
-    if (to) {
-      var cc = String(settings.cc_mentor_on_replies).toLowerCase() === 'yes' ? String(team.mentor_email || '') : '';
-      sendMail_(to, cc, reportName_() + ', week ' + num_(r.week) + ': a reply from ' + settings.signoff,
-        'Hello ' + team.team_name + ',\n\n' + String(r.reply).trim() + '\n\nAll your reports and replies are here:\n' + team.report_link + '\n\n' + settings.signoff);
-    }
-    setCells_(t, r._row, { reply_sent_at: new Date(), send_reply: false });
-    sent++;
-  });
-  return sent;
-}
-
-/** Safety: while a pretend date is set, the automatic emails only run if every email is redirected to a test address. */
-function pretendBlocksAutoEmails_() {
-  var s = settings_();
-  if (String(s.pretend_today || '').trim() && !String(s.send_all_emails_to || '').trim()) {
-    Logger.log('Automatic emails skipped: pretend_today is set and send_all_emails_to is empty.');
-    return true;
-  }
-  return false;
-}
-
-function autoMondayReminder() {
-  var settings = settings_();
-  if (String(settings.reminders_on).toLowerCase() !== 'yes' || pretendBlocksAutoEmails_()) return;
-  var cur = currentWeek_(weeks_(), todayStr_());
-  if (!cur || dstr_(cur.due) !== todayStr_()) return;
-  sendReminders_(cur);
-}
-
-/** The teams that have not yet sent the report for this week (demo and stopped teams left out). */
-function teamsMissing_(cur) {
-  var reports = reportsAll_();
-  return teamsAll_().filter(function (t) {
-    if (!t.team_name || String(t.status).toLowerCase() === 'stopped' || isDemo_(t)) return false;
-    if (find_(reports, function (r) { return r.team_id === t.team_id && r.week === cur.week; })) return false;
-    return listOf_(t.founder_emails).length && t.report_link;
-  });
-}
-
-function sendReminders_(cur) {
-  var settings = settings_();
-  var due = dstr_(cur.due) === todayStr_();
-  var teams = teamsMissing_(cur);
-  teams.forEach(function (t) {
-    sendMail_(listOf_(t.founder_emails).join(','), '', 'Your ' + reportName_() + ' is due ' + (due ? 'today' : 'on ' + longDate_(cur.due)),
-      'Hello ' + t.team_name + ',\n\nYour report for week ' + cur.week + ' (' + rangeLabel_(cur.covers_start, cur.covers_end) + ') is due ' + (due ? 'today' : 'on ' + longDate_(cur.due)) + '. It takes about seven minutes:\n' + t.report_link + '\n\n' + settings.signoff);
-  });
-  return teams.length;
-}
-
-function autoDigests() {
-  var settings = settings_();
-  if (String(settings.digests_on).toLowerCase() !== 'yes' || pretendBlocksAutoEmails_()) return;
-  var cur = currentWeek_(weeks_(), todayStr_());
-  if (!cur) return;
-  sendDigests_(cur);
-}
-
-function sendDigests_(cur) {
-  var settings = settings_();
-  var reports = reportsAll_();
-  var teams = teamsAll_().filter(function (t) { return String(t.status).toLowerCase() !== 'stopped' && !isDemo_(t) && t.team_name; });
-  var byMentor = {};
-  var summary = [];
-  teams.forEach(function (t) {
-    var r = find_(reports, function (x) { return x.team_id === t.team_id && x.week === cur.week; });
-    var text = digestBlock_(t, r);
-    summary.push(text);
-    var m = String(t.mentor_email || '').trim();
-    if (m) (byMentor[m] = byMentor[m] || []).push(text);
-  });
-  Object.keys(byMentor).forEach(function (m) {
-    sendMail_(m, '', reportName_() + ', week ' + cur.week + ': Monday reports from your ' + (byMentor[m].length === 1 ? 'team' : 'teams'),
-      'Hello,\n\nHere is what your team sent for week ' + cur.week + ' (' + rangeLabel_(cur.covers_start, cur.covers_end) + ').\n\n' +
-      byMentor[m].join('\n\n') + '\n\nThank you for coaching them.\n' + settings.signoff);
-  });
-  if (settings.admin_email && summary.length) {
-    sendMail_(String(settings.admin_email), '', reportName_() + ', week ' + cur.week + ': summary of Monday reports',
-      summary.join('\n\n') + '\n\nOpen the Reports tab and use "Revenue Accelerator > Show this week\'s reports" to reply.');
-  }
-  return { mentors: Object.keys(byMentor).length, summary: !!(settings.admin_email && summary.length) };
-}
-
-function digestBlock_(t, r) {
-  if (!r) return '== ' + t.team_name + ' (' + trackOf_(t) + ') ==\nNo report yet.';
-  var lines = ['== ' + t.team_name + ' (' + trackOf_(t) + ')' + (r.late === 'Yes' ? ' – late' : '') + ' =='];
-  lines.push('Money received: ' + money_(r.revenue) + (trackOf_(t) === 'Direct' ? ' · new paying customers: ' + r.new_customers : ' · potential customers moved forward: ' + num_(r.orgs_moved)));
-  lines.push('Asked: ' + r.asked + ' · yes ' + r.yes + ' · no ' + r.no + ' · not yet ' + r.not_yet);
-  lines.push('Customers said: ' + r.customers_said);
-  if (r.changing) lines.push('Changing: ' + r.changing);
-  lines.push('Next week: ask ' + r.goal_asks + ', receive ' + money_(r.goal_revenue) + (r.goal_text ? ' – ' + r.goal_text : ''));
-  if (r.blocker) lines.push('Blocker: ' + r.blocker + (r.wants_reply === 'Yes' ? ' (wants a reply)' : ''));
-  lines.push('Mentor call: ' + r.mentor_call + (r.mentor_note ? ' – ' + r.mentor_note : ''));
-  if (r.flags) lines.push('Flags: ' + r.flags);
-  return lines.join('\n');
-}
-
-function sendMail_(to, cc, subject, body) {
-  var s = settings_();
-  var opts = { name: String(s.programme_name || 'Mashauri Revenue Accelerator') };
-  var redirect = String(s.send_all_emails_to || '').trim();
-  if (redirect) {
-    body = '[TEST: this email would have gone to ' + to + (cc ? ', copied to ' + cc : '') + ']\n\n' + body;
-    subject = '[TEST] ' + subject;
-    to = redirect; cc = '';
-  }
-  if (cc) opts.cc = cc;
-  if (s.contact_email) opts.replyTo = String(s.contact_email);
-  MailApp.sendEmail(to, subject, body, opts);
-}
-
-/** One line saying where emails from this Sheet will go, for confirmation boxes. */
-function emailDestination_() {
-  var r = String(settings_().send_all_emails_to || '').trim();
-  return r ? 'TEST MODE: every email goes to ' + r + ' only.' : 'Emails go to the real addresses in the Teams tab.';
-}
-
 /* ============================== Menu ============================== */
 
 function onOpen() {
@@ -313,29 +192,6 @@ function onOpen() {
     .addToUi();
 }
 
-function menuRemindersNow() {
-  var ui = SpreadsheetApp.getUi();
-  var cur = currentWeek_(weeks_(), todayStr_());
-  if (!cur) { ui.alert('No week is open yet (today counts as ' + todayStr_() + ').'); return; }
-  var teams = teamsMissing_(cur);
-  if (!teams.length) { ui.alert('Every team has sent its week ' + cur.week + ' report, so there is nobody to remind.'); return; }
-  var ok = ui.alert('Send reminders now', 'This sends the week ' + cur.week + ' reminder to the ' + teams.length + (teams.length === 1 ? ' team' : ' teams') + ' that have not reported:\n\n' +
-    teams.map(function (t) { return '• ' + t.team_name; }).join('\n') + '\n\n' + emailDestination_() + '\n\nContinue?', ui.ButtonSet.YES_NO);
-  if (ok !== ui.Button.YES) return;
-  var n = sendReminders_(cur);
-  toast_(n + (n === 1 ? ' reminder sent.' : ' reminders sent.'));
-}
-
-function menuDigestsNow() {
-  var ui = SpreadsheetApp.getUi();
-  var cur = currentWeek_(weeks_(), todayStr_());
-  if (!cur) { ui.alert('No week is open yet (today counts as ' + todayStr_() + ').'); return; }
-  var ok = ui.alert('Send Tuesday digests now', 'This sends the week ' + cur.week + ' digest to every mentor in the Teams tab, and the summary to ' + (settings_().admin_email || 'nobody (admin_email is empty)') + '.\n\n' + emailDestination_() + '\n\nContinue?', ui.ButtonSet.YES_NO);
-  if (ok !== ui.Button.YES) return;
-  var r = sendDigests_(cur);
-  toast_(r.mentors + ' mentor ' + (r.mentors === 1 ? 'digest' : 'digests') + (r.summary ? ' and your summary' : '') + ' sent.');
-}
-
 function menuShowThisWeek() {
   var cur = currentWeek_(weeks_(), todayStr_());
   var t = table_('reports');
@@ -352,11 +208,6 @@ function menuShowAll() {
   var sh = table_('reports').sheet;
   if (sh.getFilter()) sh.getFilter().remove();
   sh.activate();
-}
-
-function menuSendReplies() {
-  var n = sendTickedReplies_();
-  toast_(n ? n + (n === 1 ? ' reply sent.' : ' replies sent.') : 'No ticked replies to send. Tick "Send reply" next to a reply first.');
 }
 
 function menuRefreshLog() { refreshReportLog_(); ss_().getSheetByName(LOG_TAB).activate(); }
@@ -393,24 +244,6 @@ function menuEmailLinks() {
   });
   toast_('Links sent to ' + targets.length + (targets.length === 1 ? ' team.' : ' teams.'));
 }
-
-function menuEmailsOn() {
-  removeTriggers_();
-  ScriptApp.newTrigger('autoMondayReminder').timeBased().everyDays(1).atHour(14).inTimezone(tz_()).create();
-  ScriptApp.newTrigger('autoDigests').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).inTimezone(tz_()).create();
-  ScriptApp.newTrigger('autoDaily').timeBased().everyDays(1).atHour(5).inTimezone(tz_()).create();
-  toast_('Automatic emails are on: reminders on due days at 14:00, digests on Tuesdays at 07:00 (' + tz_() + ' time).');
-}
-
-function menuEmailsOff() { removeTriggers_(); toast_('Automatic emails are off.'); }
-
-function removeTriggers_() {
-  ScriptApp.getProjectTriggers().forEach(function (tr) {
-    if (['autoMondayReminder', 'autoDigests', 'autoDaily'].indexOf(tr.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(tr);
-  });
-}
-
-function autoDaily() { refreshReportLog_(); }
 
 /* ============================== Checking permissions ============================== */
 
@@ -687,10 +520,6 @@ function tidyReportRows_(t) {
 
 function fmtStamp_(d) { return Utilities.formatDate(d, tz_(), 'yyyy-MM-dd HH:mm'); }
 function find_(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
-function toast_(msg) {
-  try { ss_().toast(msg, 'Revenue Accelerator', 8); } catch (e) { Logger.log(msg); }
-}
-
 // Apps Script entrypoints, re-exported by src/main.ts. Apps Script calls these by name.
 export {
   onOpen,
@@ -698,18 +527,10 @@ export {
   checkSetup,
   menuShowThisWeek,
   menuShowAll,
-  menuSendReplies,
   menuRefreshLog,
   menuPreparePage,
   menuCreateLinks,
   menuEmailLinks,
-  menuEmailsOn,
-  menuEmailsOff,
   menuAddDemo,
   menuRemoveDemo,
-  menuRemindersNow,
-  menuDigestsNow,
-  autoMondayReminder,
-  autoDigests,
-  autoDaily,
 };
