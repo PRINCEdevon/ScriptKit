@@ -32,6 +32,18 @@ import {
   readWeeks as weeks_,
 } from './dates.js';
 import {
+  buildFeedback as buildFeedback_,
+  DEFAULT_RULES,
+} from './feedback.js';
+import {
+  latestSnapshot as latestSnapshot_,
+  STAGE_NAMES,
+} from './pipeline.js';
+import {
+  scoreboard as scoreboard_,
+  totals as totals_,
+} from './scoreboard.js';
+import {
   lastDataRow as lastRealRow_,
   setCells as setCells_,
   spreadsheet as ss_,
@@ -68,8 +80,6 @@ import {
  * anything below; settings, dates and feedback wording all live in tabs of the Sheet.
  */
 
-var STAGE_NAMES = ['Dropped', '1 First meeting', '2 Shown the product', '3 Price or proposal sent', '4 Decision-maker agreed', '5 Signed or paid'];
-
 var LOG_TAB = 'Report log';
 
 var DEFAULT_WEEKS = [
@@ -84,30 +94,6 @@ var DEFAULT_WEEKS = [
   [8, [2027, 2, 1], [2027, 2, 7], [2027, 2, 7], [2027, 2, 8], 'Revenue'],
   [9, [2027, 2, 8], [2027, 2, 14], [2027, 2, 14], [2027, 2, 15], 'Revenue'],
   [10, [2027, 2, 15], [2027, 2, 21], [2027, 2, 21], [2027, 2, 22], 'Revenue', 'Demo Day week']
-];
-
-/* Feedback rules: id, track, on, tone, headline, detail, flag, when. The order is the priority order. */
-var DEFAULT_RULES = [
-  ['late', 'Both', 'Yes', 'info', 'This report was sent after the Monday deadline.', 'It still counts, but it is marked as late.', 'Late', 'The report arrived after the due date.'],
-  ['no_asks', 'Both', 'Yes', 'warn', 'You did not ask anyone to buy this week.', 'Conversations without a request to pay do not move your number. Next week, end every conversation by asking.', 'No asks', 'Nobody was asked to buy (or, on the Organisation track, to take the next step).'],
-  ['first_money', 'Both', 'Yes', 'good', 'Your first money from a customer: {revenue}.', 'Keep proof of every payment. It is your evidence at the week 6 checkpoint.', '', 'The team received money for the first time.'],
-  ['asks_change', 'Both', 'Yes', 'info', 'You {asked_phrase}, {change_phrase}.', '{goal_phrase}', 'Asks down', 'Compares this week\'s asks with last week\'s, and with last week\'s goal. Turns amber when asks fell.'],
-  ['money_goal', 'Both', 'Yes', 'info', 'You received {revenue} against a goal of {goal_revenue}.', '{total_phrase}', 'Money goal missed', 'Last week the team set a money goal.'],
-  ['all_no', 'Both', 'Yes', 'warn', 'Nobody said yes from {asked} asks.', 'Change one thing next week: the price, the offer, or who you ask. Then tell us what you changed.', 'No yeses', 'Five or more asks and no yes.'],
-  ['not_yet_high', 'Both', 'Yes', 'warn', '{not_yet} of your {asked} said "not yet".', 'Go back to each of them this week and ask for a small deposit or a date to decide, so that "not yet" becomes a yes or a no.', '', 'Three or more "not yet" answers, and at least as many as the yeses.'],
-  ['org_moves', 'Organisation', 'Yes', 'good', '{moved} {moved_noun} moved forward a stage this week.', '{added_phrase}', '', 'At least one potential customer moved forward.'],
-  ['org_no_moves', 'Organisation', 'Yes', 'warn', 'None of your potential customers moved forward a stage this week.', 'Pick the one closest to a decision and ask for the next step this week.', 'No stage moves', 'No potential customer moved forward.'],
-  ['org_stuck', 'Organisation', 'Yes', 'warn', '{stuck_org} has been at "{stuck_stage}" for three reports in a row.', 'Who approves the spending there, and have you met them?', 'Stuck potential customer', 'A potential customer has not moved in three reports.'],
-  ['money_flat', 'Both', 'Yes', 'warn', 'No money came in for two weeks running.', 'What will you change this week to get the next payment?', 'No money 2 weeks', 'No money this week or last week, after earlier payments.'],
-  ['growth', 'Both', 'Yes', 'info', 'Money received was {growth_word} {growth_pct}% on last week.', 'From week 6 the scoreboard ranks teams by money received.', 'Money down', 'From week 6, when last week\'s money was above zero.'],
-  ['checkpoint_direct_none', 'Direct', 'Yes', 'calendar', 'The week 6 checkpoint starts on {checkpoint_date}, and you do not have a paying customer yet.', 'Every conversation from now on should end with a request to pay. A paid pre-order or deposit counts.', 'No payment yet', 'Weeks 3 to 5, Direct track, no money received so far.'],
-  ['checkpoint_direct_ok', 'Direct', 'Yes', 'calendar', 'The week 6 checkpoint starts on {checkpoint_date}.', 'You already have paying customers. Make sure you have proof of every payment ready.', '', 'Weeks 3 to 5, Direct track, money already received.'],
-  ['checkpoint_org_none', 'Organisation', 'Yes', 'calendar', 'The week 6 checkpoint starts on {checkpoint_date}.', 'You will need a paid pilot or a signed letter of intent. Your furthest potential customer is at "{furthest_stage_name}".', 'No pilot or letter yet', 'Weeks 3 to 5, Organisation track, nothing signed or paid yet.'],
-  ['checkpoint_org_ok', 'Organisation', 'Yes', 'calendar', 'The week 6 checkpoint starts on {checkpoint_date}.', 'You already have a potential customer that has signed or paid. Keep the signed letter or proof of payment ready.', '', 'Weeks 3 to 5, Organisation track, something signed or paid.'],
-  ['price_test', 'Direct', 'Yes', 'info', '{yes} of the {asked} people you asked said yes.', 'When half or more say yes, your price may be too low. Try a higher price with the next few people.', '', 'Five or more asks and at least half said yes.'],
-  ['no_mentor', 'Both', 'Yes', 'warn', 'Two reports in a row without a mentor call.', 'Book one this week. Practising your sales conversation is what the calls are for.', 'No mentor call', 'No mentor call this week or last week.'],
-  ['cohort_direct', 'Direct', 'Yes', 'compare', 'The middle Direct-track team asked {median_asked} people to buy this week.', 'You asked {asked}.', '', 'Enough Direct-track teams have reported this week to compare.'],
-  ['cohort_org', 'Organisation', 'Yes', 'compare', 'The middle Organisation-track team moved {median_moved} potential customers forward this week.', 'You moved {moved}.', '', 'Enough Organisation-track teams have reported this week to compare.']
 ];
 
 /* Feedback wording that earlier versions used. Setup replaces it with the current wording,
@@ -217,15 +203,6 @@ function weekInfo_(w) {
     opens: longDate_(w.opens),
     phase: String(w.scoreboard || 'Activity')
   };
-}
-
-function totals_(mine, upToWeek) {
-  var t = { revenue: 0, customers: 0, asked: 0, yes: 0, reportsSent: 0, weeksOpened: upToWeek };
-  mine.forEach(function (r) {
-    if (r.week > upToWeek) return;
-    t.revenue += r.revenue; t.customers += r.new_customers; t.asked += r.asked; t.yes += r.yes; t.reportsSent += 1;
-  });
-  return t;
 }
 
 /* ============================== Receiving a report ============================== */
@@ -481,149 +458,6 @@ function preparePage_(url) {
 }
 
 function htmlEscape_(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-
-/* ============================== Instant feedback ============================== */
-
-var RULES = {
-  late: function (c) { return c.late ? {} : null; },
-  no_asks: function (c) { return c.rep.asked === 0 ? {} : null; },
-  first_money: function (c) { return c.rep.revenue > 0 && c.before.revenue === 0 ? {} : null; },
-  asks_change: function (c) {
-    if (!c.prev || c.rep.asked === 0) return null;
-    var d = c.rep.asked - c.prev.asked;
-    var v = { change_phrase: d > 0 ? 'up from ' + c.prev.asked + ' last week' : d < 0 ? 'down from ' + c.prev.asked + ' last week' : 'the same as last week', goal_phrase: '' };
-    var tone = d > 0 ? 'up' : d < 0 ? 'warn' : 'info';
-    if (c.prev.goal_asks > 0) {
-      var short = c.prev.goal_asks - c.rep.asked;
-      v.goal_phrase = short <= 0 ? 'You aimed for ' + c.prev.goal_asks + ', so you met your goal.' : 'You aimed for ' + c.prev.goal_asks + ', so you were ' + short + ' short.';
-    }
-    return { vars: v, tone: tone, flag: d < 0 };
-  },
-  money_goal: function (c) {
-    if (!c.prev || !(c.prev.goal_revenue > 0)) return null;
-    if (c.rep.revenue > 0 && c.before.revenue === 0) return null; // first_money says it
-    var met = c.rep.revenue >= c.prev.goal_revenue;
-    return { tone: met ? 'good' : 'info', flag: !met };
-  },
-  all_no: function (c) { return c.rep.asked >= 5 && c.rep.yes === 0 ? {} : null; },
-  not_yet_high: function (c) { return c.rep.not_yet >= 3 && c.rep.not_yet >= c.rep.yes ? {} : null; },
-  org_moves: function (c) { return c.moved > 0 ? {} : null; },
-  org_no_moves: function (c) { return c.moved === 0 && c.pipelineCount > 0 ? {} : null; },
-  org_stuck: function (c) {
-    if (!c.stuck.length) return null;
-    var s = c.stuck[0];
-    return { vars: { stuck_org: s.organisation, stuck_stage: STAGE_NAMES[s.stage] } };
-  },
-  money_flat: function (c) { return c.week >= 2 && c.rep.revenue === 0 && c.prev && c.prev.revenue === 0 && c.before.revenue > 0 ? {} : null; },
-  growth: function (c) {
-    if (c.week < 6 || !c.prev || !(c.prev.revenue > 0)) return null;
-    var pct = Math.round((c.rep.revenue - c.prev.revenue) / c.prev.revenue * 100);
-    if (pct === 0) return { vars: { growth_word: 'unchanged at', growth_pct: 0 }, tone: 'info' };
-    return { vars: { growth_word: pct > 0 ? 'up' : 'down', growth_pct: Math.abs(pct) }, tone: pct > 0 ? 'up' : 'warn', flag: pct < 0 };
-  },
-  checkpoint_direct_none: function (c) { return inRun_(c) && c.before.revenue + c.rep.revenue === 0 ? {} : null; },
-  checkpoint_direct_ok: function (c) { return inRun_(c) && c.before.revenue + c.rep.revenue > 0 ? {} : null; },
-  checkpoint_org_none: function (c) { return inRun_(c) && c.furthest < 5 && c.before.revenue + c.rep.revenue === 0 ? {} : null; },
-  checkpoint_org_ok: function (c) { return inRun_(c) && (c.furthest >= 5 || c.before.revenue + c.rep.revenue > 0) ? {} : null; },
-  price_test: function (c) { return c.rep.asked >= 5 && c.rep.yes * 2 >= c.rep.asked ? {} : null; },
-  no_mentor: function (c) { return c.rep.mentor_call === 'No' && c.prev && c.prev.mentor_call === 'No' ? {} : null; },
-  cohort_direct: function (c) {
-    if (c.cohortAsked.length < num_(settings_().min_teams_for_comparison || 3)) return null;
-    return { vars: { median_asked: median_(c.cohortAsked) } };
-  },
-  cohort_org: function (c) {
-    if (c.cohortMoved.length < num_(settings_().min_teams_for_comparison || 3)) return null;
-    return { vars: { median_moved: median_(c.cohortMoved) } };
-  }
-};
-
-function inRun_(c) { return c.week >= 3 && c.week <= 5; }
-
-function buildFeedback_(c) {
-  var rules = tableRows_('rules');
-  var max = num_(settings_().max_feedback_items) || 6;
-  var totalRevenue = c.before.revenue + c.rep.revenue;
-  var totalCustomers = c.before.customers + c.rep.new_customers;
-  var asked = c.rep.asked;
-  var base = {
-    asked: asked, yes: c.rep.yes, no: c.rep.no, not_yet: c.rep.not_yet,
-    revenue: money_(c.rep.revenue), new_customers: c.rep.new_customers,
-    prev_asked: c.prev ? c.prev.asked : '', goal_asks: c.prev ? c.prev.goal_asks : '',
-    goal_revenue: c.prev ? money_(c.prev.goal_revenue) : '',
-    total_revenue: money_(totalRevenue), total_customers: totalCustomers,
-    total_phrase: c.track === 'Direct'
-      ? 'Your total so far is ' + money_(totalRevenue) + ' from ' + totalCustomers + ' paying ' + (totalCustomers === 1 ? 'customer' : 'customers') + '.'
-      : 'Your total so far is ' + money_(totalRevenue) + '.',
-    asked_phrase: c.track === 'Direct'
-      ? 'asked ' + asked + ' ' + (asked === 1 ? 'person' : 'people') + ' to buy'
-      : 'asked ' + asked + ' ' + (asked === 1 ? 'potential customer' : 'potential customers') + ' to take the next step',
-    moved: c.moved, moved_noun: c.moved === 1 ? 'potential customer' : 'potential customers',
-    added_phrase: c.added ? 'You also added ' + c.added + ' new ' + (c.added === 1 ? 'potential customer' : 'potential customers') + '.' : '',
-    furthest_stage_name: STAGE_NAMES[c.furthest] || 'no potential customers yet',
-    checkpoint_date: checkpointLabel_(c.weeks), track: c.track
-  };
-  var out = [];
-  for (var i = 0; i < rules.length && out.length < max; i++) {
-    var r = rules[i];
-    if (String(r.on).toLowerCase() !== 'yes') continue;
-    var t = String(r.track || 'Both');
-    if (t !== 'Both' && t !== c.track) continue;
-    var fn = RULES[String(r.id)];
-    if (!fn) continue;
-    var res = fn(c);
-    if (!res) continue;
-    var vars = Object.assign({}, base, res.vars || {});
-    var tone = res.tone || String(r.tone || 'info');
-    var lead = fill_(String(r.lead || ''), vars);
-    var detail = fill_(String(r.detail || ''), vars);
-    var showFlag = res.flag === undefined ? !!r.flag : res.flag;
-    out.push({ id: r.id, tone: tone, lead: lead, detail: detail, flag: showFlag ? String(r.flag || '') : '' });
-  }
-  return out;
-}
-
-function fill_(text, vars) {
-  return text.replace(/\{(\w+)\}/g, function (m, k) { return vars.hasOwnProperty(k) ? String(vars[k]) : m; });
-}
-
-/* ============================== Scoreboard ============================== */
-
-function scoreboard_(cur, weeks, reports, myTeamId, today) {
-  var phase = String(cur.scoreboard || 'Activity');
-  var teams = teamsAll_().filter(function (t) { return String(t.status).toLowerCase() !== 'stopped' && t.team_name; });
-  var pipelineAll = tableRows_('pipeline');
-  var dueSoFar = weeks.filter(function (w) { return w.week <= cur.week; }).length;
-  var out = { week: cur.week, phase: phase, direct: [], organisation: [] };
-  teams.forEach(function (t) {
-    var mine = reports.filter(function (r) { return r.team_id === t.team_id && r.week <= cur.week; });
-    var thisWeek = find_(mine, function (r) { return r.week === cur.week; });
-    var lastWeek = find_(mine, function (r) { return r.week === cur.week - 1; });
-    var tot = totals_(mine, cur.week);
-    var snap = latestSnapshot_(pipelineAll.filter(function (p) { return p.team_id === t.team_id; }), cur.week + 1);
-    var furthest = 0, signed = 0;
-    snap.forEach(function (o) { if (o.stage > furthest) furthest = o.stage; if (o.stage === 5) signed++; });
-    var row = {
-      team: t.team_name, you: t.team_id === myTeamId, reported: !!thisWeek,
-      sent: mine.length, due: dueSoFar,
-      asked: thisWeek ? thisWeek.asked : null, yes: thisWeek ? thisWeek.yes : null,
-      moved: thisWeek ? num_(thisWeek.orgs_moved) : null, furthest: STAGE_NAMES[furthest] || '',
-      furthestN: furthest, signed: signed,
-      revenueWeek: thisWeek ? thisWeek.revenue : null, revenueLast: lastWeek ? lastWeek.revenue : null,
-      revenueTotal: tot.revenue, customersTotal: tot.customers
-    };
-    (trackOf_(t) === 'Direct' ? out.direct : out.organisation).push(row);
-  });
-  var rev = phase.toLowerCase() === 'revenue';
-  out.direct.sort(function (a, b) {
-    if (a.reported !== b.reported && !rev) return a.reported ? -1 : 1;
-    return rev ? (b.revenueTotal - a.revenueTotal) || (b.customersTotal - a.customersTotal) : (b.asked - a.asked) || (b.yes - a.yes);
-  });
-  out.organisation.sort(function (a, b) {
-    if (a.reported !== b.reported && !rev) return a.reported ? -1 : 1;
-    return rev ? (b.signed - a.signed) || (b.revenueTotal - a.revenueTotal) || (b.furthestN - a.furthestN) : (b.moved - a.moved) || (b.furthestN - a.furthestN);
-  });
-  return out;
-}
 
 /* ============================== Report log ============================== */
 
@@ -1186,13 +1020,6 @@ function reportsAll_() {
   });
 }
 
-function latestSnapshot_(rows, beforeWeek) {
-  var ws = rows.map(function (r) { return r.week; }).filter(function (w) { return w < beforeWeek; });
-  if (!ws.length) return [];
-  var w = Math.max.apply(null, ws);
-  return rows.filter(function (r) { return r.week === w; });
-}
-
 function snapshotFor_(rows, week) {
   var m = {};
   rows.forEach(function (r) { if (r.week === week) m[String(r.organisation).toLowerCase()] = r.stage; });
@@ -1209,11 +1036,6 @@ function byWeek_(a, b) { return a.week - b.week; }
 function lastBefore_(mine, week) { var p = null; mine.forEach(function (r) { if (r.week < week) p = r; }); return p; }
 function uniq_(a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); }
 function parseJson_(s, dflt) { try { return JSON.parse(String(s)); } catch (e) { return dflt; } }
-function median_(a) {
-  var s = a.slice().sort(function (x, y) { return x - y; });
-  var m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
-}
 function toast_(msg) {
   try { ss_().toast(msg, 'Revenue Accelerator', 8); } catch (e) { Logger.log(msg); }
 }

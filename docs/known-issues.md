@@ -103,6 +103,13 @@ received (`scoreboard_`), and error responses include raw exception messages fro
 
 ### "Last week" comparisons use the previous report (Confirmed)
 
-`asks_change`, `money_flat` and `growth` compare with the team's previous report
-(`lastBefore_`). If a team skipped a week, that report is older than last week, but the
+`asks_change`, `money_flat` and `growth` (in `src/feedback.ts`) compare with the team's
+previous report (`lastBefore_`). If a team skipped a week, that report is older than last week, but the
 wording still says "last week" or "two weeks running".
+
+### An unchanged week still shows the "Money down" flag (Confirmed)
+
+From week 6, the `growth` rule (in `src/feedback.ts`) compares money received with the previous
+report. When the amount is exactly the same, the note correctly says "unchanged at 0%", but the
+check returns no flag value, so the rule's default flag ("Money down") is shown to the
+programme manager anyway. `tests/feedback.test.ts` pins the current behaviour.

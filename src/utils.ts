@@ -17,3 +17,15 @@ export function toNumber(value: unknown): number {
   const number = parseNumber(value);
   return number === null ? 0 : number;
 }
+
+/**
+ * The middle value; with an even count, the mean of the two middle values, rounded. Values are
+ * combined with JavaScript's own operators, exactly as in the original.
+ */
+export function median(values: number[]): number {
+  const sorted = values.slice().sort((x, y) => x - y);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2
+    ? (sorted[middle] as number)
+    : Math.round(((sorted[middle - 1] as number) + (sorted[middle] as number)) / 2);
+}

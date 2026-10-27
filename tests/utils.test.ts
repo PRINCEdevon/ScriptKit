@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseNumber, toNumber } from '../src/utils.js';
+import { median, parseNumber, toNumber } from '../src/utils.js';
 import { FakeGoogle } from './support/fake-google.js';
 import { loadLegacy } from './support/runtime.js';
 
@@ -69,5 +69,16 @@ describe('parseNumber', () => {
       expect(parseNumber(input), String(input)).toBe(legacy.call('parseNumber_', input));
       expect(toNumber(input), String(input)).toBe(legacy.call('num_', input));
     }
+  });
+});
+
+describe('median', () => {
+  it('takes the middle value, or the rounded mean of the middle two, like the original', () => {
+    const legacy = loadLegacy(new FakeGoogle());
+    for (const values of [[5], [5, 3], [5, 3, 8], [5, 3, 8, 2], [1, 2], [-1, -2], [0, 0, 7, 9]]) {
+      expect(median(values), String(values)).toBe(legacy.call('median_', values));
+    }
+    expect(median([5, 3, 8, 2])).toBe(4);
+    expect(median([1, 2])).toBe(2);
   });
 });
