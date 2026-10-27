@@ -65,6 +65,13 @@ const EXTRACTED: string[] = [
   'totals_',
   'STAGE_NAMES',
   'latestSnapshot_',
+  // PR 4: src/feedback.ts and src/utils.ts
+  'DEFAULT_RULES',
+  'RULES',
+  'inRun_',
+  'buildFeedback_',
+  'fill_',
+  'median_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global
