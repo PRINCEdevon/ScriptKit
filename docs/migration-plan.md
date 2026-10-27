@@ -11,9 +11,9 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 | --- | -------------------------------- | --------------------------------------------------- | -------------------------------- |
 | 1   | `chore/scaffold`                 | chore: initialize ScriptKit development environment | Merged                           |
 | 2   | `refactor/legacy-runtime`        | refactor: integrate legacy application into build   | Merged                           |
-| 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Ready for review (branch pushed) |
-| 4   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Not started                      |
-| 5   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Not started                      |
+| 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Merged                           |
+| 4   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Ready for review (branch pushed) |
+| 5   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Not started                      |
 | 6   | `refactor/notifications`         | refactor: migrate email and scheduled jobs          | Not started                      |
 | 7   | `refactor/admin-and-integration` | refactor: complete administration and integration   | Not started                      |
 
@@ -29,15 +29,21 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 3. **Sheets and teams.** Table reading and writing (`table_`, `appendRow_`, `setCells_`,
    `safe_`), settings, team lookup by private code, report links, number parsing, dates and
    reporting-week selection.
-4. **Reports and pipeline.** `reportsAll_`, `submitReport_`, `validate_`, `recordReport_`,
-   `submitCorrection_`, pipeline snapshots and proof uploads, keeping the HTTP contract.
-5. **Feedback and scoreboard.** `RULES`, `buildFeedback_`, `scoreboard_` and totals, with
+4. **Feedback and scoreboard.** `RULES`, `buildFeedback_`, `scoreboard_` and totals, with
    characterization tests that run the same fixtures through the legacy and new code.
-6. **Notifications.** `sendMail_` (including test mode), reminders, digests, replies and
-   the trigger handlers, tested with fake mail and trigger services.
-7. **Administration and integration.** Menus, setup and repair, demo data, the report page
-   preparation, and the remaining legacy functions. Remove the transitional legacy module,
-   check every entrypoint, and document any manual verification still needed.
+5. **Reports and pipeline.** `reportsAll_`, `submitReport_`, `validate_`, `recordReport_`,
+   `submitCorrection_`, the team page view, pipeline snapshots and proof uploads, keeping the
+   HTTP contract. This includes the historical comparisons and pipeline progression that
+   `recordReport_` works out for feedback (previous report, totals, stage moves, stuck
+   organisations, cohorts), and the Report log that every submission rebuilds
+   (`refreshReportLog_`).
+
+Feedback comes before reports (the original order had them the other way round) because the
+report code calls the feedback and scoreboard code, and typed modules never import from
+`src/legacy.js`. 6. **Notifications.** `sendMail_` (including test mode), reminders, digests, replies and
+the trigger handlers, tested with fake mail and trigger services. 7. **Administration and integration.** Menus, setup and repair, demo data, the report page
+preparation, and the remaining legacy functions. Remove the transitional legacy module,
+check every entrypoint, and document any manual verification still needed.
 
 ## How each refactoring PR works
 
@@ -73,9 +79,10 @@ Sheet is suitable):
 
 ### Record
 
-| Build | Where                                    | Checked                                                            | Not checked                |
-| ----- | ---------------------------------------- | ------------------------------------------------------------------ | -------------------------- |
-| PR 2  | A personal test project bound to a Sheet | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`) |
+| Build | Where                                        | Checked                                                            | Not checked                |
+| ----- | -------------------------------------------- | ------------------------------------------------------------------ | -------------------------- |
+| PR 2  | A personal test project bound to a Sheet     | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`) |
+| PR 3  | The same test project (pushed and read back) | Sheet checks pending                                               | Web app (`doGet`/`doPost`) |
 
 ## Legacy entrypoints
 

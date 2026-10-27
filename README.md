@@ -10,8 +10,9 @@ The first application is the **Revenue Accelerator Monday report**, which is bei
 from one large legacy file into this repository, one pull request at a time.
 
 > **Current status: migration in progress.** The bundle runs the whole application behind all
-> 21 of its entrypoints. Spreadsheet access, settings, dates and teams are typed modules in
-> `src/`; the rest is still the original code in `src/legacy.js`. The live Sheets keep running
+> 21 of its entrypoints. Spreadsheet access, settings, dates, teams, feedback and the
+> scoreboard are typed modules in `src/`; the rest is still the original code in
+> `src/legacy.js`. The live Sheets keep running
 > the pasted `Code.gs` until the migrated bundle is deployed. See
 > [docs/migration-plan.md](docs/migration-plan.md) for progress.
 

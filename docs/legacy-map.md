@@ -7,9 +7,10 @@ the 21 entrypoints listed in [migration-plan.md](migration-plan.md).
 
 ## Shared state
 
-- **Constants:** `STAGE_NAMES`, `LOG_TAB`, `DEFAULT_WEEKS`, `DEFAULT_RULES`, `OLD_RULE_TEXT`,
-  `OLD_DEFAULTS` are still in `src/legacy.js`. `TABS` (the spreadsheet schema) is in
-  `src/sheets.ts`; `DEFAULT_TZ` and `DEFAULT_SETTINGS` are in `src/config.ts`.
+- **Constants:** `LOG_TAB`, `DEFAULT_WEEKS`, `OLD_RULE_TEXT` and `OLD_DEFAULTS` are still in
+  `src/legacy.js`. `TABS` (the spreadsheet schema) is in `src/sheets.ts`; `DEFAULT_TZ` and
+  `DEFAULT_SETTINGS` in `src/config.ts`; `STAGE_NAMES` in `src/pipeline.ts`; `DEFAULT_RULES`
+  in `src/feedback.ts`.
 - **Per-execution cache:** `SETTINGS_CACHE_`, filled by `settings()` and cleared by every
   settings write. It is the only top-level variable that is reassigned. `src/config.ts` keeps
   it as a real global variable (`globalThis.SETTINGS_CACHE_`), as the original script did,
@@ -39,27 +40,32 @@ Still in `src/legacy.js`, moving with their first typed caller (typed modules ne
 from `src/legacy.js`): the small helpers `clean_`, `listOf_`,
 `find_`, `byWeek_`, `lastBefore_`, `uniq_`, `median_` and `parseJson_`.
 
-## PR 4: reports and pipeline
+## PR 4: feedback and scoreboard (done)
 
-| Function                                                  | Role                                                                                                | Uses                                 |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `doGet` → `getTeamView_`                                  | Everything the report page shows: status, previous goals, pipeline, totals, history, scoreboard.    | most of PR 3, `scoreboard_`, `json_` |
-| `doPost` → `submitReport_`, `submitCorrection_`           | Receive a report or a correction.                                                                   | `json_`                              |
-| `submitReport_`                                           | Under the script lock: check the code, week and duplicates, then validate, save proof and record.   | LockService, `refreshReportLog_`     |
-| `validate_`                                               | Check and clean the submitted answers and pipeline.                                                 | `parseNumber_`, `clean_`             |
-| `recordReport_`                                           | Compare with earlier reports and pipeline, build feedback, append the rows. Also used by demo data. | `buildFeedback_`, `appendRow_`       |
-| `reportsAll_`                                             | Every report, with its numbers as numbers and its team ID as text.                                  | `table_`, `num_`                     |
-| `latestSnapshot_`, `snapshotFor_`, `totals_`, `weekInfo_` | Pipeline snapshots, running totals and week labels.                                                 |                                      |
-| `saveProof_`, `proofRootFolder_`, `parentFolder_`         | Save proof files in Drive next to the Sheet.                                                        | DriveApp, Utilities, `setSetting_`   |
-| `json_`                                                   | JSON response.                                                                                      | ContentService                       |
+| Legacy                                                        | Now                                                                                                           |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `DEFAULT_RULES`, `RULES`, `inRun_`, `buildFeedback_`, `fill_` | `src/feedback.ts`: `DEFAULT_RULES`, `RULE_CHECKS`, `buildFeedback` (pure core `feedbackFrom`), `fillTemplate` |
+| `scoreboard_`, `totals_`                                      | `src/scoreboard.ts`: `scoreboard`, `totals`                                                                   |
+| `STAGE_NAMES`, `latestSnapshot_`                              | `src/pipeline.ts`: `STAGE_NAMES`, `latestSnapshot`                                                            |
+| `median_`                                                     | `src/utils.ts`: `median`                                                                                      |
 
-## PR 5: feedback and scoreboard
+The feedback context (previous report, totals, stage moves, stuck organisations, cohorts) is
+still worked out by `recordReport_`, which moves in PR 5.
 
-| Function                  | Role                                                                                      |
-| ------------------------- | ----------------------------------------------------------------------------------------- |
-| `RULES`, `inRun_`         | One function per feedback rule id; returns `null` or the values for its wording.          |
-| `buildFeedback_`, `fill_` | Apply the rules in the order of the Feedback rules tab and fill in their wording.         |
-| `scoreboard_`             | Rank teams per track by activity or by money, as the Weeks tab's "Scoreboard shows" says. |
+## PR 5: reports and pipeline
+
+| Function                                          | Role                                                                                                | Uses                                 |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `doGet` → `getTeamView_`                          | Everything the report page shows: status, previous goals, pipeline, totals, history, scoreboard.    | most of PR 3, `scoreboard_`, `json_` |
+| `doPost` → `submitReport_`, `submitCorrection_`   | Receive a report or a correction.                                                                   | `json_`                              |
+| `submitReport_`                                   | Under the script lock: check the code, week and duplicates, then validate, save proof and record.   | LockService, `refreshReportLog_`     |
+| `validate_`                                       | Check and clean the submitted answers and pipeline.                                                 | `parseNumber_`, `clean_`             |
+| `recordReport_`                                   | Compare with earlier reports and pipeline, build feedback, append the rows. Also used by demo data. | `buildFeedback_`, `appendRow_`       |
+| `reportsAll_`                                     | Every report, with its numbers as numbers and its team ID as text.                                  | `table_`, `num_`                     |
+| `snapshotFor_`, `weekInfo_`                       | One week's pipeline snapshot by organisation; week labels for the page.                             |                                      |
+| `saveProof_`, `proofRootFolder_`, `parentFolder_` | Save proof files in Drive next to the Sheet.                                                        | DriveApp, Utilities, `setSetting_`   |
+| `json_`                                           | JSON response.                                                                                      | ContentService                       |
+| `refreshReportLog_`, `LOG_TAB`                    | Rebuild the Report log tab (also from the menu, setup, demo data and the daily trigger).            | Sheets                               |
 
 ## PR 6: notifications and scheduled jobs
 
@@ -79,7 +85,7 @@ from `src/legacy.js`): the small helpers `clean_`, `listOf_`,
 | `onOpen`                                                                                                                | Builds the Revenue Accelerator menu.                      |
 | `setup` → `ensureTab_`, `tidySettings_`, `upgradeRuleText_`, `writeStartHere_`, `setValidationList_`, `tidyReportRows_` | Create or repair every tab without overwriting edits.     |
 | `checkSetup`                                                                                                            | Permission and configuration check.                       |
-| `menuShowThisWeek`, `menuShowAll`, `menuRefreshLog` → `refreshReportLog_`                                               | Filter the Reports tab; rebuild the Report log tab.       |
+| `menuShowThisWeek`, `menuShowAll`, `menuRefreshLog`                                                                     | Filter the Reports tab; rebuild the Report log tab.       |
 | `menuCreateLinks`, `menuEmailLinks`                                                                                     | Create links; email each team its link once.              |
 | `menuPreparePage` → `preparePage_`, `uploadSteps_`, `htmlEscape_`                                                       | Fill in the report page template from Drive.              |
 | `menuAddDemo` → `addDemo_`, `menuRemoveDemo` → `removeDemo_`                                                            | Demo teams and reports, recorded through `recordReport_`. |
