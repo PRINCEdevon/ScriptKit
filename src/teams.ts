@@ -18,12 +18,12 @@ export function teamByToken(token: string): Row | null {
 }
 
 /** Anything whose track starts with "org" is on the Organisation track; the rest are Direct. */
-export function trackOf(team: { track?: unknown }): Track {
+export function trackOf(team: { track?: unknown; [field: string]: unknown }): Track {
   return String(team.track).toLowerCase().indexOf('org') === 0 ? 'Organisation' : 'Direct';
 }
 
 /** Teams added by "Add demo data" have IDs starting with DEMO. */
-export function isDemo(team: { team_id?: unknown }): boolean {
+export function isDemo(team: { team_id?: unknown; [field: string]: unknown }): boolean {
   return /^DEMO/.test(String(team.team_id));
 }
 

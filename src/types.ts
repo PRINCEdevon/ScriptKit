@@ -22,6 +22,20 @@ export interface Table {
   def: TabDef;
 }
 
+/** A row of the Reports tab with its numbers parsed and its team ID as text. */
+export interface Report extends Row {
+  team_id: string;
+  week: number;
+  revenue: number;
+  new_customers: number;
+  asked: number;
+  yes: number;
+  no: number;
+  not_yet: number;
+  goal_asks: number;
+  goal_revenue: number;
+}
+
 /** The Settings tab as key → value. */
 export type Settings = Record<string, Cell | undefined>;
 

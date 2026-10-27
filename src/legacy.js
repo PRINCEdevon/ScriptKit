@@ -32,6 +32,14 @@ import {
   readWeeks as weeks_,
 } from './dates.js';
 import {
+  latestSnapshot as latestSnapshot_,
+  STAGE_NAMES,
+} from './pipeline.js';
+import {
+  scoreboard as scoreboard_,
+  totals as totals_,
+} from './scoreboard.js';
+import {
   lastDataRow as lastRealRow_,
   setCells as setCells_,
   spreadsheet as ss_,
@@ -67,8 +75,6 @@ import {
  * The setup guide explains how to install and publish it. You should not need to edit
  * anything below; settings, dates and feedback wording all live in tabs of the Sheet.
  */
-
-var STAGE_NAMES = ['Dropped', '1 First meeting', '2 Shown the product', '3 Price or proposal sent', '4 Decision-maker agreed', '5 Signed or paid'];
 
 var LOG_TAB = 'Report log';
 
@@ -217,15 +223,6 @@ function weekInfo_(w) {
     opens: longDate_(w.opens),
     phase: String(w.scoreboard || 'Activity')
   };
-}
-
-function totals_(mine, upToWeek) {
-  var t = { revenue: 0, customers: 0, asked: 0, yes: 0, reportsSent: 0, weeksOpened: upToWeek };
-  mine.forEach(function (r) {
-    if (r.week > upToWeek) return;
-    t.revenue += r.revenue; t.customers += r.new_customers; t.asked += r.asked; t.yes += r.yes; t.reportsSent += 1;
-  });
-  return t;
 }
 
 /* ============================== Receiving a report ============================== */
@@ -584,45 +581,6 @@ function buildFeedback_(c) {
 
 function fill_(text, vars) {
   return text.replace(/\{(\w+)\}/g, function (m, k) { return vars.hasOwnProperty(k) ? String(vars[k]) : m; });
-}
-
-/* ============================== Scoreboard ============================== */
-
-function scoreboard_(cur, weeks, reports, myTeamId, today) {
-  var phase = String(cur.scoreboard || 'Activity');
-  var teams = teamsAll_().filter(function (t) { return String(t.status).toLowerCase() !== 'stopped' && t.team_name; });
-  var pipelineAll = tableRows_('pipeline');
-  var dueSoFar = weeks.filter(function (w) { return w.week <= cur.week; }).length;
-  var out = { week: cur.week, phase: phase, direct: [], organisation: [] };
-  teams.forEach(function (t) {
-    var mine = reports.filter(function (r) { return r.team_id === t.team_id && r.week <= cur.week; });
-    var thisWeek = find_(mine, function (r) { return r.week === cur.week; });
-    var lastWeek = find_(mine, function (r) { return r.week === cur.week - 1; });
-    var tot = totals_(mine, cur.week);
-    var snap = latestSnapshot_(pipelineAll.filter(function (p) { return p.team_id === t.team_id; }), cur.week + 1);
-    var furthest = 0, signed = 0;
-    snap.forEach(function (o) { if (o.stage > furthest) furthest = o.stage; if (o.stage === 5) signed++; });
-    var row = {
-      team: t.team_name, you: t.team_id === myTeamId, reported: !!thisWeek,
-      sent: mine.length, due: dueSoFar,
-      asked: thisWeek ? thisWeek.asked : null, yes: thisWeek ? thisWeek.yes : null,
-      moved: thisWeek ? num_(thisWeek.orgs_moved) : null, furthest: STAGE_NAMES[furthest] || '',
-      furthestN: furthest, signed: signed,
-      revenueWeek: thisWeek ? thisWeek.revenue : null, revenueLast: lastWeek ? lastWeek.revenue : null,
-      revenueTotal: tot.revenue, customersTotal: tot.customers
-    };
-    (trackOf_(t) === 'Direct' ? out.direct : out.organisation).push(row);
-  });
-  var rev = phase.toLowerCase() === 'revenue';
-  out.direct.sort(function (a, b) {
-    if (a.reported !== b.reported && !rev) return a.reported ? -1 : 1;
-    return rev ? (b.revenueTotal - a.revenueTotal) || (b.customersTotal - a.customersTotal) : (b.asked - a.asked) || (b.yes - a.yes);
-  });
-  out.organisation.sort(function (a, b) {
-    if (a.reported !== b.reported && !rev) return a.reported ? -1 : 1;
-    return rev ? (b.signed - a.signed) || (b.revenueTotal - a.revenueTotal) || (b.furthestN - a.furthestN) : (b.moved - a.moved) || (b.furthestN - a.furthestN);
-  });
-  return out;
 }
 
 /* ============================== Report log ============================== */
@@ -1184,13 +1142,6 @@ function reportsAll_() {
     r.team_id = String(r.team_id);
     return r;
   });
-}
-
-function latestSnapshot_(rows, beforeWeek) {
-  var ws = rows.map(function (r) { return r.week; }).filter(function (w) { return w < beforeWeek; });
-  if (!ws.length) return [];
-  var w = Math.max.apply(null, ws);
-  return rows.filter(function (r) { return r.week === w; });
 }
 
 function snapshotFor_(rows, week) {

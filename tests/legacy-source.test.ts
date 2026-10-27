@@ -60,6 +60,11 @@ const EXTRACTED: string[] = [
   'createLinks_',
   'randomToken_',
   'pad2_',
+  // PR 4: src/scoreboard.ts and src/pipeline.ts
+  'scoreboard_',
+  'totals_',
+  'STAGE_NAMES',
+  'latestSnapshot_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global
