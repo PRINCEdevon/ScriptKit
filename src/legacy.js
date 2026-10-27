@@ -6,6 +6,20 @@
 // Never change, format or lint what remains: this file is excluded from TypeScript, ESLint and
 // Prettier, and src/legacy.d.ts describes its exports.
 
+import {
+  lastDataRow as lastRealRow_,
+  safeValue as safe_,
+  setCells as setCells_,
+  spreadsheet as ss_,
+  readTable as table_,
+  readRows as tableRows_,
+  TABS,
+} from './sheets.js';
+import {
+  toNumber as num_,
+  parseNumber as parseNumber_,
+} from './utils.js';
+
 /**
  * Mashauri Revenue Accelerator: Monday report.
  *
@@ -27,39 +41,6 @@ var DEFAULT_TZ = 'Africa/Johannesburg';
 
 var STAGE_NAMES = ['Dropped', '1 First meeting', '2 Shown the product', '3 Price or proposal sent', '4 Decision-maker agreed', '5 Signed or paid'];
 
-/* Each tab: [field name used by the script, column heading you see in the Sheet, older headings still recognised]. */
-var TABS = {
-  settings: { name: 'Settings', cols: [['key', 'Setting'], ['value', 'Value'], ['about', 'What it does']] },
-  teams: { name: 'Teams', cols: [
-    ['team_id', 'Team ID'], ['team_name', 'Team name'], ['track', 'Track'], ['status', 'Status'],
-    ['founders', 'Founders (comma-separated)'], ['founder_emails', 'Founder emails (comma-separated)'],
-    ['mentor_name', 'Mentor'], ['mentor_email', 'Mentor email'], ['token', 'Private code'],
-    ['report_link', 'Report link'], ['link_sent_at', 'Link emailed at'], ['notes', 'Notes']] },
-  weeks: { name: 'Weeks', cols: [
-    ['week', 'Week'], ['covers_start', 'Covers from'], ['covers_end', 'Covers to'], ['opens', 'Report opens'],
-    ['due', 'Report due'], ['scoreboard', 'Scoreboard shows'], ['note', 'Note']] },
-  reports: { name: 'Reports', cols: [
-    ['week', 'Week'], ['team_name', 'Team'], ['track', 'Track'], ['submitted_at', 'Sent at'], ['late', 'Late'],
-    ['submitted_by', 'Sent by'], ['flags', 'Flags'], ['wants_reply', 'Wants a reply'], ['reply', 'Your reply'],
-    ['send_reply', 'Send reply'], ['reply_sent_at', 'Reply sent at'],
-    ['revenue', 'Money received', ['Money received (R)']], ['new_customers', 'New paying customers'],
-    ['asked', 'Asked'], ['yes', 'Said yes'], ['no', 'Said no'], ['not_yet', 'Not yet'],
-    ['orgs_moved', 'Organisations moved forward'], ['orgs_added', 'Organisations added'],
-    ['customers_said', 'What customers said'], ['changing', 'What they are changing'],
-    ['goal_asks', 'Goal: asks next week'], ['goal_revenue', 'Goal: money next week', ['Goal: money next week (R)']], ['goal_text', 'Goal in words'],
-    ['blocker', 'Blocker and help needed'], ['mentor_call', 'Mentor call'], ['mentor_note', 'Mentor call notes'],
-    ['asked_names', 'Who they asked'], ['proof_links', 'Proof files'], ['feedback_text', 'Instant feedback shown'],
-    ['team_id', 'Team ID'], ['report_id', 'Report ID'], ['feedback_json', 'Feedback data']] },
-  pipeline: { name: 'Pipeline', cols: [
-    ['week', 'Week'], ['team_id', 'Team ID'], ['team_name', 'Team'], ['organisation', 'Organisation'],
-    ['stage', 'Stage'], ['stage_name', 'Stage name'], ['note', 'What happened'], ['submitted_at', 'Sent at']] },
-  corrections: { name: 'Corrections', cols: [
-    ['submitted_at', 'Sent at'], ['team_id', 'Team ID'], ['team_name', 'Team'], ['week', 'Week'],
-    ['submitted_by', 'Sent by'], ['note', 'Correction']] },
-  rules: { name: 'Feedback rules', cols: [
-    ['id', 'Rule'], ['track', 'Track'], ['on', 'On'], ['tone', 'Tone'], ['lead', 'Headline'],
-    ['detail', 'Detail'], ['flag', 'Flag for you'], ['when', 'When it shows']] }
-};
 var LOG_TAB = 'Report log';
 
 var DEFAULT_SETTINGS = [
@@ -1211,38 +1192,6 @@ function isDemo_(t) { return /^DEMO/.test(String(t.team_id)); }
 
 /* ============================== Sheet helpers ============================== */
 
-function ss_() {
-  var id = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
-  return id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet();
-}
-
-function table_(key) {
-  var def = TABS[key];
-  var sh = ss_().getSheetByName(def.name);
-  if (!sh) throw new Error('The "' + def.name + '" tab is missing. Run "Set up or repair the sheet".');
-  var values = sh.getDataRange().getValues();
-  var headers = (values[0] || []).map(function (h) { return String(h).trim(); });
-  var keyOf = {};
-  def.cols.forEach(function (c) { keyOf[c[1]] = c[0]; (c[2] || []).forEach(function (h) { keyOf[h] = c[0]; }); });
-  var col = {};
-  headers.forEach(function (h, i) { if (keyOf[h]) col[keyOf[h]] = i + 1; });
-  var rows = [];
-  for (var r = 1; r < values.length; r++) {
-    var row = values[r];
-    if (row.every(function (v) { return v === '' || v === null || v === false; })) continue;
-    var o = { _row: r + 1 };
-    headers.forEach(function (h, i) { if (keyOf[h]) o[keyOf[h]] = row[i]; });
-    rows.push(o);
-  }
-  return { sheet: sh, headers: headers, col: col, rows: rows, def: def };
-}
-
-function tableRows_(key) {
-  var rows = table_(key).rows;
-  if (key === 'pipeline') rows.forEach(function (r) { r.week = num_(r.week); r.stage = num_(r.stage); });
-  return rows;
-}
-
 function appendRow_(key, obj) {
   if (key === 'settings') SETTINGS_CACHE_ = null;
   var t = table_(key);
@@ -1254,12 +1203,6 @@ function appendRow_(key, obj) {
   if (key === 'reports' && t.col.send_reply) {
     t.sheet.getRange(r, t.col.send_reply).setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build()).setValue(false);
   }
-}
-
-function lastRealRow_(t) {
-  var last = 1;
-  t.rows.forEach(function (r) { if (r._row > last) last = r._row; });
-  return last;
 }
 
 /** Gives every real report a tick box, and removes tick boxes (and anything else) from the empty rows below. */
@@ -1278,16 +1221,6 @@ function tidyReportRows_(t) {
     cb.setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build());
     cb.setValues(vals.map(function (v) { return [v[0] === true]; }));
   }
-}
-
-function setCells_(t, rowNum, obj) {
-  Object.keys(obj).forEach(function (k) { if (t.col[k]) t.sheet.getRange(rowNum, t.col[k]).setValue(safe_(obj[k])); });
-}
-
-/** Text typed by students must never become a spreadsheet formula. */
-function safe_(v) {
-  if (typeof v === 'string' && /^[=+\-@]/.test(v)) return "'" + v;
-  return v;
 }
 
 /* Settings are read once per run (each web request or menu click is a new run). */
@@ -1394,16 +1327,6 @@ function fmtStamp_(d) { return Utilities.formatDate(d, tz_(), 'yyyy-MM-dd HH:mm'
 function stampLabel_(v) {
   if (Object.prototype.toString.call(v) === '[object Date]') return Utilities.formatDate(v, tz_(), "HH:mm 'on' EEEE d MMMM");
   return String(v || '');
-}
-
-function num_(v) { var n = parseNumber_(v); return n === null ? 0 : n; }
-
-function parseNumber_(v) {
-  if (typeof v === 'number') return isFinite(v) ? v : null;
-  if (v === null || v === undefined) return null;
-  var s = String(v).replace(/[Rr\s,\u00a0\u20b9$\u00a3\u20ac]/g, '');
-  if (s === '' || !/^-?\d+(\.\d+)?$/.test(s)) return null;
-  return parseFloat(s);
 }
 
 function money_(n) {
