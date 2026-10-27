@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import vm from 'node:vm';
 import { build } from '../../scripts/build.js';
-import { FakeGoogle, type Cell, type FakeSheet } from './fake-google.js';
+import { FakeBlob, FakeGoogle, type Cell, type FakeSheet } from './fake-google.js';
 
 export interface Implementation {
   name: string;
@@ -123,14 +123,26 @@ export class App {
     return entrypoint(...args);
   }
 
+  /** Calls doGet or doPost with a raw event and returns the parsed JSON response. */
+  request(name: 'doGet' | 'doPost', event: unknown): Record<string, unknown> {
+    const output = this.call(name, event) as { getContent(): string };
+    return JSON.parse(output.getContent()) as Record<string, unknown>;
+  }
+
   /** GET request from the report page. */
   get(token: string): Record<string, unknown> {
-    return this.response(this.call('doGet', { parameter: { action: 'get', t: token } }));
+    return this.request('doGet', { parameter: { action: 'get', t: token } });
   }
 
   /** POST request from the report page. */
   post(body: unknown): Record<string, unknown> {
-    return this.response(this.call('doPost', { postData: { contents: JSON.stringify(body) } }));
+    return this.request('doPost', { postData: { contents: JSON.stringify(body) } });
+  }
+
+  /** Adds a file to the Drive folder that holds the Sheet. */
+  addFile(name: string, text: string, contentType = 'text/html') {
+    const blob = new FakeBlob(new Uint8Array(Buffer.from(text, 'utf8')), contentType, name);
+    this.google.drive.addFile(name, this.google.folder, blob);
   }
 
   table(name: string): Table {
@@ -174,11 +186,6 @@ export class App {
       toasts: this.google.toasts,
       logs: this.google.logs,
     });
-  }
-
-  private response(output: unknown): Record<string, unknown> {
-    const content = (output as { getContent(): string }).getContent();
-    return JSON.parse(content) as Record<string, unknown>;
   }
 }
 
