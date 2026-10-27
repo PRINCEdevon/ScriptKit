@@ -12,8 +12,8 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 | 1   | `chore/scaffold`                 | chore: initialize ScriptKit development environment | Merged                           |
 | 2   | `refactor/legacy-runtime`        | refactor: integrate legacy application into build   | Merged                           |
 | 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Merged                           |
-| 4   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Ready for review (branch pushed) |
-| 5   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Not started                      |
+| 4   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Merged                           |
+| 5   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Ready for review (branch pushed) |
 | 6   | `refactor/notifications`         | refactor: migrate email and scheduled jobs          | Not started                      |
 | 7   | `refactor/admin-and-integration` | refactor: complete administration and integration   | Not started                      |
 
@@ -79,10 +79,11 @@ Sheet is suitable):
 
 ### Record
 
-| Build | Where                                        | Checked                                                            | Not checked                |
-| ----- | -------------------------------------------- | ------------------------------------------------------------------ | -------------------------- |
-| PR 2  | A personal test project bound to a Sheet     | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`) |
-| PR 3  | The same test project (pushed and read back) | Sheet checks pending                                               | Web app (`doGet`/`doPost`) |
+| Build | Where                                        | Checked                                                            | Not checked                                           |
+| ----- | -------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------- |
+| PR 2  | A personal test project bound to a Sheet     | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                            |
+| PR 3  | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                            |
+| PR 4  | The same test project (pushed and read back) | Sheet checks pending                                               | Web app (`doGet`/`doPost`), which runs the scoreboard |
 
 ## Legacy entrypoints
 
