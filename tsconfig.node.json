@@ -1,0 +1,12 @@
+{
+  // Tooling that runs in Node.js: tests, build scripts and config files.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "types": ["node", "google-apps-script"],
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["tests", "scripts", "*.config.ts", "*.config.js"]
+}

@@ -1,0 +1,21 @@
+{
+  // Apps Script code in src/. Only Apps Script types are loaded, so Node.js APIs
+  // (which do not exist in the Apps Script runtime) fail type checking here.
+  "compilerOptions": {
+    "target": "ES2019",
+    "lib": ["ES2019"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["google-apps-script"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src"]
+}
