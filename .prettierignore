@@ -1,0 +1,13 @@
+dist/
+coverage/
+pnpm-lock.yaml
+
+# Kept byte-for-byte: the legacy reference and the page template that is copied to Drive.
+legacy/
+web/report-template.html
+
+# Programme files a maintainer may keep at the repository root for reference
+# (Drive exports, generated report pages, manual test notes). They are not tracked.
+/*.html
+/*.xlsx
+/URA test script.md

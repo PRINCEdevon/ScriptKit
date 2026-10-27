@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>__PAGE_TITLE__</title>
+<meta name="description" content="__PAGE_DESCRIPTION__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Mashauri Brand System v1.0 tokens */
+:root {
+  --red:#cd1d31; --red-deep:#a8121f; --red-wash:#fde8eb; --red-soft:#f0a3ad;
+  --ink:#0e0e10; --charcoal:#1a1a1d; --slate:#3a3a40; --steel:#6b6b73; --line:#8a8a92;
+  --pebble:#b8b8be; --mist:#e5e5e9; --fog:#f1f1f4; --paper:#fafafa; --white:#ffffff;
+  --green:#1d6b3a; --green-wash:#e6f2ea;
+  --display:"Inter Tight","Inter","Helvetica Neue",Arial,sans-serif;
+  --sans:"Inter","Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono","SF Mono",ui-monospace,monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--slate); font-family: var(--sans); font-size: 16px; line-height: 1.55; }
+a { color: var(--red); } a:hover { color: var(--red-deep); }
+:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+.wrap { max-width: 800px; margin: 0 auto; padding-inline: 20px; }
+
+/* Header */
+.hero { background: var(--charcoal); position: relative; overflow: hidden; }
+.hero::after { content: ""; position: absolute; top: 0; right: 0; border-top: 72px solid var(--red); border-left: 72px solid transparent; }
+.hero .wrap { padding-block: 40px 36px; display: flex; flex-direction: column; gap: 12px; }
+.kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--pebble); }
+.hero h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(32px, 6vw, 40px); line-height: 1.1; letter-spacing: -.02em; color: var(--white); }
+.hero p { margin: 0; color: var(--mist); font-size: 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.chip { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; background: var(--white); color: var(--ink); }
+.chip.red { background: var(--red); color: var(--white); }
+
+main.wrap { padding-block: 32px 64px; display: flex; flex-direction: column; gap: 20px; }
+.card { background: var(--white); border: 1px solid var(--mist); border-radius: 14px; padding: clamp(20px, 4vw, 28px); display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.qhead { display: flex; flex-direction: column; gap: 6px; }
+.qnum { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--red); }
+h2 { margin: 0; font-family: var(--display); font-size: 24px; font-weight: 800; color: var(--ink); line-height: 1.2; }
+h3 { margin: 4px 0 0; font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--ink); }
+.help { margin: 0; font-size: 15px; }
+.muted { color: var(--steel); font-size: 14px; margin: 0; }
+
+/* Form fields */
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+label, .label { font-weight: 600; color: var(--ink); }
+.opt { font-weight: 400; color: var(--steel); }
+input[type=text], select, textarea { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: var(--ink); font: 400 16px var(--sans); }
+input[type=text], select { height: 48px; padding: 0 14px; }
+input.num { font-weight: 600; font-size: 18px; }
+textarea { padding: 12px 14px; resize: vertical; min-height: 76px; }
+.money { position: relative; }
+.money span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: 600; font-size: 18px; color: var(--steel); pointer-events: none; }
+.money input { padding-left: 34px; }
+.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 1px var(--red); }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: end; }
+@media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.note { background: var(--fog); border-radius: 8px; padding: 12px 16px; font-size: 15px; }
+.note strong { color: var(--ink); }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; min-height: 22px; }
+.check.good { color: var(--green); } .check.bad { color: var(--red-deep); }
+.tick { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; font-weight: 500; cursor: pointer; }
+.tick input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--red); flex: none; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+legend { font-weight: 600; color: var(--ink); padding: 0; margin-bottom: 10px; }
+.radios { display: flex; gap: 12px; flex-wrap: wrap; }
+.radio { display: flex; gap: 10px; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: var(--ink); font-weight: 600; cursor: pointer; }
+.radio input { accent-color: var(--red); margin: 0; width: 18px; height: 18px; }
+.radio:has(input:checked) { border: 2px solid var(--red); background: var(--red-wash); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 8px; font: 600 15px var(--sans); cursor: pointer; border: 1px solid var(--ink); background: var(--white); color: var(--ink); }
+.btn:hover { background: var(--fog); }
+.btn.primary { min-height: 56px; padding: 0 32px; border: 0; background: var(--red); color: var(--white); font: 700 18px var(--display); }
+.btn.primary:hover { background: var(--red-deep); }
+.btn[disabled] { opacity: .6; cursor: progress; }
+.btn.link { border: 0; background: none; color: var(--red); padding: 0 4px; min-height: 36px; text-decoration: underline; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.files { margin: 0; padding-left: 18px; font-size: 14px; }
+
+/* Pipeline editor */
+.pipe { display: flex; flex-direction: column; border: 1px solid var(--mist); border-radius: 8px; overflow: hidden; }
+.pipe-head, .pipe-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .9fr) minmax(0, 1.2fr) minmax(0, 1.4fr) 36px; gap: 10px; align-items: center; padding: 10px 14px; }
+.pipe-head { background: var(--fog); font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.pipe-row { border-top: 1px solid var(--mist); }
+.pipe-row.new { background: var(--paper); }
+.pipe-row .name { font-weight: 600; color: var(--ink); }
+.pipe-row input, .pipe-row select { height: 40px; font-size: 15px; padding: 0 10px; }
+.now-row { gap: 8px; flex-wrap: nowrap; }
+.now-row select { flex: 1 1 auto; }
+.moved { flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--green); }
+.iconbtn { width: 36px; height: 36px; border: 0; background: none; color: var(--steel); cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.iconbtn:hover { background: var(--fog); color: var(--ink); }
+.stages { display: flex; flex-wrap: wrap; gap: 6px; }
+.stages span { font-size: 13px; background: var(--fog); border-radius: 999px; padding: 3px 10px; }
+.sm-label { display: none; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--steel); }
+@media (max-width: 680px) {
+  .pipe-head { display: none; }
+  .pipe-row { grid-template-columns: 1fr; gap: 8px; }
+  .pipe-row > :first-child { grid-column: 1 / -1; }
+  .pipe-row > .note-cell { grid-column: 1 / -1; }
+  .pipe-row > .del { grid-column: 1 / -1; justify-self: end; }
+  .sm-label { display: block; }
+}
+
+/* Send */
+.send { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; padding-top: 4px; }
+.errors { background: var(--red-wash); border: 1px solid var(--red); border-radius: 8px; padding: 12px 16px; color: var(--red-deep); font-weight: 600; width: 100%; }
+.errors ul { margin: 6px 0 0; padding-left: 18px; font-weight: 500; }
+.confirm { background: var(--charcoal); color: var(--mist); border-radius: 14px; padding: 24px; width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.confirm strong { color: var(--white); font-family: var(--display); font-size: 20px; }
+.confirm .btn { border-color: var(--white); background: transparent; color: var(--white); }
+.confirm .btn.primary { background: var(--red); }
+
+/* Feedback */
+.fb { list-style: none; margin: 0; padding: 0; }
+.fb li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--mist); }
+.fb li:first-child { border-top: 0; padding-top: 0; }
+.fb p { margin: 0; }
+.fb strong { color: var(--ink); }
+.dot { width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: var(--fog); color: var(--slate); }
+.dot.good, .dot.up { background: var(--green-wash); color: var(--green); }
+.dot.warn { background: var(--red-wash); color: var(--red-deep); }
+
+/* History */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--fog); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.tile b { font-family: var(--display); font-size: 28px; font-weight: 800; color: var(--ink); line-height: 1.1; }
+.tile span { font-size: 14px; }
+.chart figcaption { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; font-size: 14px; margin-bottom: 10px; }
+.chart figcaption b { color: var(--ink); }
+.key { display: inline-flex; align-items: center; gap: 6px; }
+.key i { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.bars { display: grid; gap: 8px; align-items: end; height: 170px; border-bottom: 1px solid var(--pebble); }
+.bar { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.bar span { font-size: 12px; text-align: center; color: var(--ink); font-weight: 600; }
+.bar .a { background: var(--red-soft); border-radius: 3px 3px 0 0; }
+.bar .y { background: var(--red); }
+.bar.empty { border: 1px dashed var(--mist); border-bottom: 0; border-radius: 3px 3px 0 0; }
+.wklabels { display: grid; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--steel); text-align: center; margin-top: 6px; }
+.chart { margin: 0; }
+.tablebox { overflow-x: auto; border: 1px solid var(--mist); border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { background: var(--fog); text-align: left; padding: 10px 14px; font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--slate); vertical-align: bottom; }
+td.team { min-width: 8.5em; }
+@media (max-width: 560px) { th, td { padding: 10px 10px; } table { font-size: 14px; } }
+td { padding: 10px 14px; border-top: 1px solid var(--mist); vertical-align: top; }
+td.team { color: var(--ink); }
+tr.you td { background: var(--red-wash); font-weight: 700; color: var(--ink); }
+td.missing { color: var(--red-deep); font-weight: 600; }
+.reply { color: var(--ink); min-width: 220px; white-space: pre-line; }
+.pending { color: var(--steel); }
+.corr { display: block; margin-top: 6px; font-size: 14px; color: var(--steel); }
+.badge { display: inline-block; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; background: var(--red-wash); color: var(--red-deep); border-radius: 999px; padding: 1px 8px; margin-left: 6px; }
+
+.state { text-align: left; }
+.loading { color: var(--steel); padding: 40px 0; }
+footer { border-top: 1px solid var(--mist); }
+footer .wrap { padding-block: 24px 40px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--steel); }
+footer b { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); font-weight: 500; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="kicker" id="hero-kicker">__PROGRAMME_NAME__</span>
+    <h1 id="hero-title">Monday report</h1>
+    <p id="hero-sub"></p>
+    <div class="chips" id="hero-chips"></div>
+  </div>
+</header>
+
+<main class="wrap" id="app" aria-live="polite">
+  <p class="loading">Loading your team's page…</p>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span id="contact-line">Questions or problems? Email <a href="mailto:simon.gifford@mashauri.org">simon.gifford@mashauri.org</a></span>
+    <b>Learn. Launch. Lead.</b>
+  </div>
+</footer>
+
+<script>
+/* ---------------------------------------------------------------
+   The one thing to change: paste the web app address from the
+   Apps Script "Deploy" screen between the quotes below.
+   --------------------------------------------------------------- */
+var WEB_APP_URL = 'PASTE_YOUR_WEB_APP_URL_HERE';
+
+(function () {
+  'use strict';
+  var params = new URLSearchParams(location.search);
+  var TOKEN = params.get('t') || '';
+  var app = document.getElementById('app');
+  var view = null;
+  var pipe = [];
+  var files = [];
+  var MAX_FILE = 5 * 1024 * 1024;
+
+  /* ---------- helpers ---------- */
+  function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function cur() { return (view && view.currency) || 'R'; }
+  function rtitle() { return view && view.shortName ? view.shortName + ' report' : 'Monday report'; }
+  function rand(n) { n = Math.round(Number(n) || 0); return cur() + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function parseNum(v) { var s = String(v === null || v === undefined ? '' : v).replace(/[Rr\s,\u00a0\u20b9$\u00a3\u20ac]/g, ''); if (!/^\d+(\.\d+)?$/.test(s)) return null; return parseFloat(s); }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+  function $(sel) { return app.querySelector(sel); }
+  function $$(sel) { return Array.prototype.slice.call(app.querySelectorAll(sel)); }
+  var ICON = {
+    up: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>',
+    good: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    warn: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    info: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    calendar: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    compare: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+    upload: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+    plus: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    x: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+  };
+
+  /* ---------- talking to the Sheet ---------- */
+  function apiGet() {
+    return fetch(WEB_APP_URL + '?action=get&t=' + encodeURIComponent(TOKEN), { redirect: 'follow' }).then(function (r) { return r.json(); });
+  }
+  function apiPost(body) {
+    // Sent as plain text on purpose: Google Apps Script accepts it without an extra permission check from the browser.
+    return fetch(WEB_APP_URL, { method: 'POST', redirect: 'follow', body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+  }
+
+  function load(scrollTop) {
+    if (WEB_APP_URL.indexOf('PASTE_') === 0) { document.title = 'Monday report'; document.getElementById('hero-kicker').textContent = 'Mashauri'; return showProblem('This page is not connected yet', 'The web app address has not been added to the page. If you are Simon, see the setup guide.'); }
+    if (!TOKEN) return showProblem('This link is missing its team code', 'Please use the full link from the email you were sent.');
+    apiGet().then(function (v) {
+      view = v;
+      if (!v.ok) return showProblem('This link does not work', 'Check that you copied the whole link from your email. If it still does not work, email ' + (v.contact || 'simon.gifford@mashauri.org') + '.');
+      render();
+      if (scrollTop) window.scrollTo(0, 0);
+    }).catch(function () {
+      showProblem('We could not load your page', 'Check your internet connection and reload the page. If it keeps happening, email simon.gifford@mashauri.org.');
+    });
+  }
+
+  function showProblem(title, text) {
+    setHero(rtitle(), '', []);
+    app.innerHTML = '<section class="card state"><h2>' + esc(title) + '</h2><p class="help">' + esc(text) + '</p></section>';
+  }
+
+  function setHero(title, sub, chips) {
+    document.getElementById('hero-title').textContent = title;
+    document.getElementById('hero-sub').textContent = sub;
+    document.getElementById('hero-chips').innerHTML = chips.map(function (c) { return '<span class="chip' + (c.red ? ' red' : '') + '">' + esc(c.text) + '</span>'; }).join('');
+    if (view && view.programme) document.getElementById('hero-kicker').textContent = view.programme;
+    if (view && view.programme && view.shortName) document.title = view.shortName + ' report · ' + view.programme;
+    if (view && view.contact) document.getElementById('contact-line').innerHTML = 'Questions or problems? Email <a href="mailto:' + esc(view.contact) + '">' + esc(view.contact) + '</a>';
+  }
+
+  /* ---------- page states ---------- */
+  function render() {
+    var v = view, chips = [{ text: v.team.name }, { text: v.team.track + ' track', red: true }];
+    var isOrg = v.team.track === 'Organisation';
+    if (v.status === 'not_started') {
+      setHero(rtitle(), '', chips);
+      var f = v.firstWeek;
+      app.innerHTML = '<section class="card"><div class="qhead"><span class="qnum">Not open yet</span><h2>Your first report opens on ' + esc(f ? f.opens : 'the first Sunday') + '</h2></div>' +
+        '<p class="help">It covers ' + esc(f ? f.covers : 'your first week') + ' and is due on ' + esc(f ? f.due : 'the Monday after') + '. Keep this link: you will use it every week.</p>' +
+        '<p class="help">Each week you will answer six short questions: the money you received, who you asked to buy and what they said, what customers told you, your goal for next week, what is blocking you, and your mentor call. It takes about seven minutes, and you get feedback straight away.</p></section>';
+      return;
+    }
+    if (v.status === 'stopped') {
+      setHero('Your reports', '', chips);
+      app.innerHTML = '<section class="card"><h2>Your team has stepped out of the accelerator</h2><p class="help">You can still see your past reports and replies below. If you would like to apply again with new evidence, email ' + esc(v.contact) + '.</p></section>' + historyHtml() ;
+      wireHistory();
+      return;
+    }
+    if (v.status === 'submitted') {
+      var r = v.thisReport;
+      setHero('Week ' + v.week.n + ' report sent', 'Sent by ' + r.submitted_by + ' at ' + r.submitted_at + '. It is now locked.', chips);
+      app.innerHTML = feedbackHtml(r.feedback) + historyHtml() + scoreboardHtml();
+      wireHistory();
+      return;
+    }
+    // open
+    setHero(rtitle(), 'Week ' + v.week.n + ' · ' + v.week.covers + ' · due ' + v.week.due, chips);
+    pipe = (v.pipeline || []).map(function (o) { return { organisation: o.organisation, prevStage: o.stage, stage: o.stage, note: '', isNew: false }; });
+    files = [];
+    app.innerHTML = formHtml(isOrg) + historyHtml() + scoreboardHtml();
+    restoreDraft();
+    if (isOrg) renderPipe();
+    wireForm(isOrg);
+    wireHistory();
+    updateLive();
+  }
+
+  /* ---------- the form ---------- */
+  function q(n, title, help, body) {
+    return '<section class="card" aria-labelledby="q' + n + '-t"><div class="qhead"><span class="qnum">Question ' + n + ' of 6</span><h2 id="q' + n + '-t">' + title + '</h2>' + (help ? '<p class="help">' + help + '</p>' : '') + '</div>' + body + '</section>';
+  }
+  function numField(id, label, money, value) {
+    var input = '<input type="text" class="num" id="' + id + '" name="' + id + '" inputmode="' + (money ? 'decimal' : 'numeric') + '" data-num="' + (money ? 'money' : 'count') + '" autocomplete="off" value="' + esc(value || '') + '">';
+    return '<div class="field"><label for="' + id + '">' + label + '</label>' + (money ? '<div class="money"><span aria-hidden="true">' + esc(cur()) + '</span>' + input + '</div>' : input) + '</div>';
+  }
+  function textArea(id, label, optional, rows, placeholder) {
+    return '<div class="field"><label for="' + id + '">' + label + (optional ? ' <span class="opt">(optional)</span>' : '') + '</label><textarea id="' + id + '" name="' + id + '" rows="' + (rows || 3) + '"' + (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + '></textarea></div>';
+  }
+
+  function formHtml(isOrg) {
+    var v = view, founders = v.team.founders || [];
+    var who = '<div class="row" style="justify-content:space-between;align-items:flex-end">' +
+      '<div class="field" style="flex:1 1 260px"><label for="submitted_by">Who is filling this in?</label><select id="submitted_by" name="submitted_by"><option value="">Choose your name</option>' +
+      founders.map(function (f) { return '<option>' + esc(f) + '</option>'; }).join('') + '</select></div>' +
+      '<p class="muted" style="flex:1 1 300px">About seven minutes. One report per team. Once you send it, it cannot be changed, but you can add a correction note.</p></div>';
+
+    var q1;
+    if (!isOrg) {
+      q1 = q(1, 'Your number this week', 'Money customers actually paid you for your product or service. Not grants, prizes or money from friends and family.',
+        '<div class="grid2">' + numField('revenue', 'Money received (' + esc(cur()) + ')', true) + numField('new_customers', 'New paying customers') + '</div>' +
+        '<div class="note" id="running"></div>' + proofHtml('Add proof of payment', 'Screenshots or invoices. Optional each week, but you will need proof of every payment at week 6.'));
+    } else {
+      q1 = q(1, 'Where each potential customer stands', 'List each organisation you are trying to sell to. From week 2, last week\'s list is filled in for you: change the stage for any that moved, and add new ones at the bottom.',
+        '<div class="stages" aria-label="The five stages">' + view.stages.slice(1).map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') + '</div>' +
+        '<div class="pipe" id="pipe"></div>' +
+        '<div><button type="button" class="btn" id="add-org">' + ICON.plus + 'Add a potential customer</button></div>' +
+        '<div class="grid2" style="align-items:end">' + numField('revenue', 'Money received this week (' + esc(cur()) + ')', true) + '<div class="note" id="running"></div></div>' +
+        proofHtml('Add proof', 'Proof of payment, a signed letter of intent or a pilot agreement. You will need one of these at week 6.'));
+    }
+
+    var q2 = q(2, isOrg ? 'How many potential customers you asked to take the next step' : 'How many people you asked to buy',
+      (isOrg ? 'Enter numbers. Count each potential customer you asked to commit to something: a pilot, a meeting with the person who approves spending, or a signed letter.' : 'Enter numbers. Count only conversations where you asked the person to pay. Interest without a request to pay does not count.') + ' Put 0 if none.',
+      '<div class="grid4">' + numField('asked', 'Number asked') + numField('yes', 'How many said yes') + numField('no', 'How many said no') + numField('not_yet', 'How many said not yet') + '</div>' +
+      '<div class="check" id="sumcheck" aria-live="polite"></div>' +
+      textArea('asked_names', isOrg ? 'Which potential customers were they? (names)' : 'Who were they? (names)', true, 2));
+
+    var q3 = q(3, 'What customers told you', '',
+      textArea('customers_said', 'The most important thing you heard this week', false, 3) +
+      textArea('changing', 'What you are changing because of it', true, 2));
+
+    var prevGoal = '';
+    if (v.prev && (v.prev.goal_asks > 0 || v.prev.goal_revenue > 0)) {
+      prevGoal = '<div class="note">Last week you aimed to ' + [v.prev.goal_asks > 0 ? '<strong>ask ' + esc(v.prev.goal_asks) + (isOrg ? ' potential customers' : ' people') + '</strong>' : '', v.prev.goal_revenue > 0 ? '<strong>receive ' + esc(rand(v.prev.goal_revenue)) + '</strong>' : ''].filter(Boolean).join(' and ') + '.' +
+        (v.prev.goal_text ? ' <span>“' + esc(v.prev.goal_text) + '”</span>' : '') + '</div>';
+    }
+    var q4 = q(4, 'Your goal for next week', 'Put it in numbers. Next Monday we will show you how close you came.',
+      prevGoal + '<div class="grid2">' + numField('goal_asks', isOrg ? 'Number of potential customers we will ask to take the next step' : 'Number of people we will ask to buy') + numField('goal_revenue', 'Money we aim to receive (' + esc(cur()) + ')', true) + '</div>' +
+      '<div class="field"><label for="goal_text">In one sentence <span class="opt">(optional)</span></label><input type="text" id="goal_text" name="goal_text" autocomplete="off"></div>');
+
+    var q5 = q(5, 'What is blocking you', '',
+      textArea('blocker', 'The biggest thing in your way, and the help you need', true, 3) +
+      '<label class="tick"><input type="checkbox" id="wants_reply" name="wants_reply"><span>We would like a reply on this from Simon or our mentor</span></label>');
+
+    var q6 = q(6, 'Your mentor', '',
+      '<fieldset id="mentor_set"><legend>Did you have a call with your mentor since your last report?</legend><div class="radios">' +
+      '<label class="radio"><input type="radio" name="mentor_call" value="Yes">Yes</label>' +
+      '<label class="radio"><input type="radio" name="mentor_call" value="No">No</label></div></fieldset>' +
+      textArea('mentor_note', 'In two lines, what did you cover?', true, 2));
+
+    var send = '<div class="send" id="send-area"><div id="errors" role="alert"></div>' +
+      '<button type="button" class="btn primary" id="send-btn">Send this week\'s report</button>' +
+      '<p class="muted">You will see your feedback straight away. Simon replies in writing during the week.</p></div>';
+    return '<form id="report" novalidate style="display:flex;flex-direction:column;gap:20px">' + who + q1 + q2 + q3 + q4 + q5 + q6 + send + '</form>';
+  }
+
+  function proofHtml(btnText, help) {
+    return '<div class="field"><span class="label">Proof <span class="opt">(optional)</span></span><div class="row">' +
+      '<label class="btn" for="proof">' + ICON.upload + btnText + '</label>' +
+      '<input type="file" id="proof" class="sr" multiple accept="image/*,application/pdf">' +
+      '<span class="muted" id="proof-help">' + esc(help) + '</span></div><ul class="files" id="proof-list"></ul></div>';
+  }
+
+  function renderPipe() {
+    var stages = view.stages;
+    var opts = function (sel) {
+      // Dropped (0) last, so the list reads 1 to 5.
+      return [1, 2, 3, 4, 5, 0].map(function (i) { return '<option value="' + i + '"' + (i === sel ? ' selected' : '') + '>' + esc(i === 0 ? 'Dropped: no longer talking' : stages[i]) + '</option>'; }).join('');
+    };
+    var html = '<div class="pipe-head"><span>Potential customer</span><span>Last week</span><span>Now</span><span>What happened</span><span></span></div>';
+    if (!pipe.length) html += '<div class="pipe-row"><span class="muted">No potential customers yet. Add the organisations you are talking to.</span></div>';
+    pipe.forEach(function (o, i) {
+      var moved = !o.isNew && o.stage > o.prevStage && o.stage > 0;
+      html += '<div class="pipe-row' + (o.isNew ? ' new' : '') + '">' +
+        (o.isNew
+          ? '<div><span class="sm-label">Potential customer</span><input type="text" data-i="' + i + '" data-k="organisation" aria-label="New potential customer name" placeholder="Organisation name" value="' + esc(o.organisation) + '"></div>'
+          : '<div class="name">' + esc(o.organisation) + '</div>') +
+        '<div><span class="sm-label">Last week</span>' + (o.isNew ? '<span class="muted">New</span>' : esc(stages[o.prevStage] || '')) + '</div>' +
+        '<div><span class="sm-label">Now</span><div class="row now-row"><select data-i="' + i + '" data-k="stage" aria-label="Stage now for ' + esc(o.organisation || 'new potential customer') + '">' + opts(o.stage) + '</select>' +
+        (moved ? '<span class="moved">' + ICON.up + 'Moved</span>' : '') + '</div></div>' +
+        '<div class="note-cell"><span class="sm-label">What happened</span><input type="text" data-i="' + i + '" data-k="note" aria-label="What happened with ' + esc(o.organisation || 'new potential customer') + '" value="' + esc(o.note) + '"></div>' +
+        '<div class="del">' + (o.isNew ? '<button type="button" class="iconbtn" data-del="' + i + '" aria-label="Remove this potential customer">' + ICON.x + '</button>' : '') + '</div>' +
+        '</div>';
+    });
+    $('#pipe').innerHTML = html;
+  }
+
+  function wireForm(isOrg) {
+    var form = $('#report');
+    form.addEventListener('input', function (e) {
+      var t = e.target;
+      if (t.dataset && t.dataset.num) onlyNumbers(t);
+      if (t.dataset && t.dataset.k) {
+        var o = pipe[+t.dataset.i];
+        o[t.dataset.k] = t.dataset.k === 'stage' ? +t.value : t.value;
+        if (t.dataset.k === 'stage') { renderPipe(); }
+      }
+      t.classList && t.classList.remove('invalid');
+      updateLive(); saveDraft();
+    });
+    form.addEventListener('change', function (e) {
+      if (e.target.id === 'proof') addFiles(e.target.files);
+      if (e.target.dataset && e.target.dataset.k === 'stage') { pipe[+e.target.dataset.i].stage = +e.target.value; renderPipe(); updateLive(); saveDraft(); }
+    });
+    form.addEventListener('click', function (e) {
+      var del = e.target.closest('[data-del]');
+      if (del) { pipe.splice(+del.dataset.del, 1); renderPipe(); updateLive(); saveDraft(); }
+      var rm = e.target.closest('[data-rmfile]');
+      if (rm) { files.splice(+rm.dataset.rmfile, 1); renderFiles(); }
+    });
+    if (isOrg) $('#add-org').addEventListener('click', function () {
+      pipe.push({ organisation: '', prevStage: 0, stage: 1, note: '', isNew: true });
+      renderPipe();
+      var inputs = $$('#pipe input[data-k="organisation"]');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+    $('#send-btn').addEventListener('click', function () { askToConfirm(); });
+    form.addEventListener('submit', function (e) { e.preventDefault(); });
+  }
+
+  function addFiles(list) {
+    var msg = [];
+    Array.prototype.forEach.call(list, function (f) {
+      if (files.length >= 5) { msg.push('You can add up to five files at a time.'); return; }
+      if (f.size > MAX_FILE) { msg.push(f.name + ' is larger than 5 MB. Try a screenshot instead.'); return; }
+      files.push(f);
+    });
+    $('#proof').value = '';
+    renderFiles(msg);
+  }
+  function renderFiles(msg) {
+    $('#proof-list').innerHTML = files.map(function (f, i) {
+      return '<li>' + esc(f.name) + ' <button type="button" class="btn link" data-rmfile="' + i + '">Remove</button></li>';
+    }).join('') + (msg && msg.length ? '<li style="color:var(--red-deep)">' + esc(msg.join(' ')) + '</li>' : '');
+  }
+
+  // Number boxes accept digits only (and, for money, commas and one decimal point).
+  function onlyNumbers(el) {
+    var v = el.value, clean;
+    if (el.dataset.num === 'money') {
+      clean = v.replace(/[^\d.,]/g, '');
+      var i = clean.indexOf('.');
+      if (i >= 0) clean = clean.slice(0, i + 1) + clean.slice(i + 1).replace(/\./g, '');
+    } else clean = v.replace(/\D/g, '');
+    if (clean !== v) {
+      var pos = Math.max(0, (el.selectionStart || 0) - (v.length - clean.length));
+      el.value = clean;
+      try { el.setSelectionRange(pos, pos); } catch (err) { }
+    }
+  }
+
+  function val(id) { var el = $('#' + id); return el ? el.value : ''; }
+
+  function updateLive() {
+    var v = view, isOrg = v.team.track === 'Organisation';
+    // Running total
+    var rev = parseNum(val('revenue')) || 0;
+    var running = $('#running');
+    if (running) {
+      if (!isOrg) {
+        var cust = parseNum(val('new_customers')) || 0;
+        var tc = v.totals.customers + cust;
+        running.innerHTML = 'Running total, worked out for you: <strong>' + rand(v.totals.revenue + rev) + ' from ' + plural(tc, 'paying customer', 'paying customers') + '</strong> since the start.';
+      } else {
+        var moved = pipe.filter(function (o) { return !o.isNew && o.stage > o.prevStage && o.stage > 0; }).length;
+        var added = pipe.filter(function (o) { return o.isNew && o.organisation.trim(); }).length;
+        running.innerHTML = 'Worked out for you: <strong>' + plural(moved, 'potential customer', 'potential customers') + ' moved forward</strong> this week' + (added ? ', and ' + added + ' added' : '') + '. Money received so far: <strong>' + rand(v.totals.revenue + rev) + '</strong>.';
+      }
+    }
+    // Sum check
+    var a = parseNum(val('asked')), y = parseNum(val('yes')), n = parseNum(val('no')), ny = parseNum(val('not_yet'));
+    var box = $('#sumcheck');
+    if (a === null || y === null || n === null || ny === null) { box.className = 'check'; box.textContent = ''; }
+    else if (y + n + ny === a) { box.className = 'check good'; box.innerHTML = ICON.good + ' ' + y + ' + ' + n + ' + ' + ny + ' = ' + a + '. The answers add up.'; }
+    else { box.className = 'check bad'; box.innerHTML = ICON.warn + ' ' + y + ' + ' + n + ' + ' + ny + ' = ' + (y + n + ny) + ', but you asked ' + a + '. Please check.'; }
+  }
+
+  /* ---------- drafts, so a reload or a dropped connection loses nothing ---------- */
+  function draftKey() { return 'mra-draft-' + TOKEN + '-w' + view.week.n; }
+  var FIELDS = ['submitted_by', 'revenue', 'new_customers', 'asked', 'yes', 'no', 'not_yet', 'asked_names', 'customers_said', 'changing', 'goal_asks', 'goal_revenue', 'goal_text', 'blocker', 'mentor_note'];
+  function saveDraft() {
+    var d = { pipe: pipe };
+    FIELDS.forEach(function (k) { d[k] = val(k); });
+    d.wants_reply = $('#wants_reply').checked;
+    var mc = app.querySelector('input[name="mentor_call"]:checked'); d.mentor_call = mc ? mc.value : '';
+    try { localStorage.setItem(draftKey(), JSON.stringify(d)); } catch (e) { }
+  }
+  function restoreDraft() {
+    var d = null;
+    try { d = JSON.parse(localStorage.getItem(draftKey()) || 'null'); } catch (e) { }
+    if (!d) return;
+    FIELDS.forEach(function (k) { var el = $('#' + k); if (el && d[k] !== undefined) el.value = d[k]; });
+    $('#wants_reply').checked = !!d.wants_reply;
+    if (d.mentor_call) { var r = app.querySelector('input[name="mentor_call"][value="' + d.mentor_call + '"]'); if (r) r.checked = true; }
+    if (Array.isArray(d.pipe) && view.team.track === 'Organisation') pipe = d.pipe;
+  }
+  function clearDraft() { try { localStorage.removeItem(draftKey()); } catch (e) { } }
+
+  /* ---------- checking and sending ---------- */
+  function collect() {
+    var isOrg = view.team.track === 'Organisation';
+    var errs = [], bad = [];
+    var who = val('submitted_by');
+    if (!who) { errs.push('Choose your name at the top.'); bad.push('submitted_by'); }
+    var nums = ['revenue', 'asked', 'yes', 'no', 'not_yet', 'goal_asks', 'goal_revenue'];
+    if (!isOrg) nums.splice(1, 0, 'new_customers');
+    var n = {};
+    nums.forEach(function (k) { n[k] = parseNum(val(k)); if (n[k] === null) bad.push(k); });
+    if (bad.some(function (k) { return nums.indexOf(k) >= 0; })) errs.push('Fill in every number box with a number (0 if none).');
+    if (n.asked !== null && n.yes !== null && n.no !== null && n.not_yet !== null && n.yes + n.no + n.not_yet !== n.asked) { errs.push('In question 2, yes, no and not yet must add up to the number you asked.'); bad.push('asked'); }
+    if (!val('customers_said').trim()) { errs.push('Question 3: tell us the most important thing customers said.'); bad.push('customers_said'); }
+    var mc = app.querySelector('input[name="mentor_call"]:checked');
+    if (!mc) { errs.push('Question 6: did you have a mentor call?'); bad.push('mentor_set'); }
+    if (isOrg) {
+      pipe.forEach(function (o, i) { if (o.isNew && !o.organisation.trim()) { errs.push('Give each new potential customer a name, or remove the empty row.'); } });
+      var names = {};
+      pipe.forEach(function (o) { var k = o.organisation.trim().toLowerCase(); if (k && names[k]) errs.push(o.organisation + ' is listed twice.'); names[k] = true; });
+    }
+    $$('.invalid').forEach(function (el) { el.classList.remove('invalid'); });
+    bad.forEach(function (id) { var el = $('#' + id); if (el) el.classList.add('invalid'); });
+    return {
+      errs: uniq(errs), firstBad: bad[0],
+      report: {
+        submitted_by: who, revenue: val('revenue'), new_customers: isOrg ? '0' : val('new_customers'),
+        asked: val('asked'), yes: val('yes'), no: val('no'), not_yet: val('not_yet'), asked_names: val('asked_names'),
+        customers_said: val('customers_said'), changing: val('changing'),
+        goal_asks: val('goal_asks'), goal_revenue: val('goal_revenue'), goal_text: val('goal_text'),
+        blocker: val('blocker'), wants_reply: $('#wants_reply').checked,
+        mentor_call: mc ? mc.value : '', mentor_note: val('mentor_note')
+      },
+      pipeline: isOrg ? pipe.filter(function (o) { return o.organisation.trim(); }).map(function (o) { return { organisation: o.organisation.trim(), stage: o.stage, note: o.note }; }) : []
+    };
+  }
+  function uniq(a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); }
+
+  function askToConfirm() {
+    var c = collect();
+    var box = $('#errors');
+    if (c.errs.length) {
+      box.className = 'errors';
+      box.innerHTML = 'Please check ' + (c.errs.length === 1 ? 'one thing' : c.errs.length + ' things') + ' before sending:<ul>' + c.errs.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>';
+      var el = c.firstBad && $('#' + c.firstBad);
+      if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (el.focus) el.focus({ preventScroll: true }); }
+      return;
+    }
+    box.className = ''; box.innerHTML = '';
+    var area = $('#send-area');
+    area.innerHTML = '<div class="confirm" role="dialog" aria-labelledby="cf-t"><strong id="cf-t">Ready to send?</strong>' +
+      '<span>Once you send it, this report is locked and cannot be changed. You can add a correction note afterwards if you need to.</span>' +
+      '<div class="row"><button type="button" class="btn primary" id="cf-yes">Yes, send it</button><button type="button" class="btn" id="cf-no">Go back</button></div>' +
+      '<div id="cf-msg" role="status"></div></div>';
+    $('#cf-yes').focus();
+    $('#cf-no').addEventListener('click', function () { resetSend(); });
+    $('#cf-yes').addEventListener('click', function () { send(c); });
+  }
+  function resetSend() {
+    $('#send-area').innerHTML = '<div id="errors" role="alert"></div><button type="button" class="btn primary" id="send-btn">Send this week\'s report</button><p class="muted">You will see your feedback straight away. Simon replies in writing during the week.</p>';
+    $('#send-btn').addEventListener('click', function () { askToConfirm(); });
+  }
+
+  function readFiles() {
+    return Promise.all(files.map(function (f) {
+      return new Promise(function (resolve, reject) {
+        var fr = new FileReader();
+        fr.onload = function () { resolve({ name: f.name, type: f.type, data: String(fr.result).split(',')[1] || '' }); };
+        fr.onerror = reject;
+        fr.readAsDataURL(f);
+      });
+    }));
+  }
+
+  function send(c) {
+    var yes = $('#cf-yes'), msg = $('#cf-msg');
+    yes.disabled = true; $('#cf-no').disabled = true;
+    yes.textContent = files.length ? 'Uploading and sending…' : 'Sending…';
+    readFiles().then(function (fileData) {
+      return apiPost({ action: 'submit', t: TOKEN, report: c.report, pipeline: c.pipeline, files: fileData });
+    }).then(function (res) {
+      if (res.ok || res.error === 'duplicate') { clearDraft(); load(true); return; }
+      msg.textContent = res.message || 'Something went wrong. Please try again.';
+      yes.disabled = false; $('#cf-no').disabled = false; yes.textContent = 'Try again';
+    }).catch(function () {
+      msg.textContent = 'We could not reach the server. Your answers are saved on this device; check your connection and try again.';
+      yes.disabled = false; $('#cf-no').disabled = false; yes.textContent = 'Try again';
+    });
+  }
+
+  /* ---------- feedback ---------- */
+  function feedbackHtml(items) {
+    items = items || [];
+    var list = items.length ? '<ol class="fb">' + items.map(function (f) {
+      var tone = f.tone || 'info';
+      return '<li><span class="dot ' + esc(tone) + '">' + (ICON[tone] || ICON.info) + '</span><p><strong>' + esc(f.lead) + '</strong>' + (f.detail ? ' ' + esc(f.detail) : '') + '</p></li>';
+    }).join('') + '</ol>' : '<p class="help">Thank you. Your report is in.</p>';
+    return '<section class="card"><div class="qhead"><span class="qnum">Instant feedback</span><h2>What your numbers say this week</h2></div>' + list +
+      '<p class="muted">These notes are worked out automatically from your answers. Simon adds a short written reply during the week, and it appears in the table below.</p></section>';
+  }
+
+  /* ---------- history ---------- */
+  function historyHtml() {
+    var v = view, isOrg = v.team.track === 'Organisation', h = v.history || [];
+    if (!h.length) return '';
+    var t = v.totals;
+    var tiles = '<div class="tiles">' +
+      tile(rand(t.revenue), 'Money received to date') +
+      (isOrg ? tile(h.reduce(function (s, r) { return s + (Number(r.moved) || 0); }, 0), 'Stage moves so far') : tile(t.customers, 'Paying customers')) +
+      tile(t.asked, isOrg ? 'Requests made' : 'People asked to buy') +
+      tile(t.reportsSent + ' of ' + t.weeksOpened, 'Reports sent') + '</div>';
+
+    var total = v.weeksTotal || 10;
+    var byWeek = {}; h.forEach(function (r) { byWeek[r.week] = r; });
+    var max = Math.max.apply(null, [5].concat(h.map(function (r) { return r.asked || 0; })));
+    var cols = 'grid-template-columns:repeat(' + total + ',minmax(0,1fr))';
+    var bars = '', labels = '', alt = [];
+    for (var w = 1; w <= total; w++) {
+      var r = byWeek[w];
+      if (r) {
+        var ah = Math.round((r.asked - r.yes) / max * 140), yh = Math.round(r.yes / max * 140);
+        bars += '<div class="bar"><span>' + r.asked + '</span><div class="a" style="height:' + ah + 'px"></div><div class="y" style="height:' + yh + 'px"></div></div>';
+        alt.push('Week ' + w + ': ' + r.asked + ' asked, ' + r.yes + ' yes');
+      } else bars += '<div class="bar empty"></div>';
+      labels += '<span' + (w === 6 ? ' style="color:var(--red)"' : '') + '>' + (total > 8 ? '' : 'Wk ') + w + '</span>';
+    }
+    var chart = '<figure class="chart"><figcaption><b>' + (isOrg ? 'Potential customers asked to take the next step' : 'People asked to buy') + ', each week</b>' +
+      '<span class="key"><i style="background:var(--red)"></i>Said yes</span><span class="key"><i style="background:var(--red-soft)"></i>Asked, not yet a yes</span></figcaption>' +
+      '<div class="bars" role="img" aria-label="' + esc(alt.join('. ')) + '" style="' + cols + '">' + bars + '</div><div class="wklabels" aria-hidden="true" style="' + cols + '">' + labels + '</div></figure>';
+
+    var head = '<tr><th scope="col">Week</th><th scope="col">Asked</th><th scope="col">Yes</th>' + (isOrg ? '<th scope="col">Moved forward</th>' : '') + '<th scope="col">Money</th>' + (isOrg ? '' : '<th scope="col">New customers</th>') + '<th scope="col">Simon\'s reply</th></tr>';
+    var rows = h.map(function (r) {
+      var reply = r.reply ? '<span class="reply">' + esc(r.reply) + '</span>' : '<span class="pending">' + (r.week === (v.week && v.week.n) ? 'Coming during the week' : 'No written reply') + '</span>';
+      var corr = (r.corrections || []).map(function (c) { return '<span class="corr">Your correction: ' + esc(c) + '</span>'; }).join('');
+      return '<tr><td class="team"><b>' + r.week + '</b>' + (r.late ? '<span class="badge">Late</span>' : '') + '</td><td>' + r.asked + '</td><td>' + r.yes + '</td>' +
+        (isOrg ? '<td>' + (r.moved === '' ? '' : esc(r.moved)) + '</td>' : '') + '<td>' + rand(r.revenue) + '</td>' + (isOrg ? '' : '<td>' + r.new_customers + '</td>') +
+        '<td>' + reply + corr + '</td></tr>';
+    }).join('');
+    var weekOpts = h.map(function (r) { return '<option value="' + r.week + '">Week ' + r.week + '</option>'; }).join('');
+    var correction = '<div id="corr-area"><div class="row"><button type="button" class="btn" id="corr-open">Add a correction note</button><span class="muted">Sent reports cannot be edited. A correction is added alongside, and Simon sees both.</span></div></div>';
+    var corrForm = '<template id="corr-tpl"><div class="field" style="gap:12px"><div class="grid2"><div class="field"><label for="corr-week">Which week?</label><select id="corr-week">' + weekOpts + '</select></div>' +
+      '<div class="field"><label for="corr-who">Your name</label><select id="corr-who">' + (v.team.founders || []).map(function (f) { return '<option>' + esc(f) + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="field"><label for="corr-note">What should it have said?</label><textarea id="corr-note" rows="2"></textarea></div>' +
+      '<div class="row"><button type="button" class="btn" id="corr-send">Send correction</button><button type="button" class="btn link" id="corr-cancel">Cancel</button><span id="corr-msg" role="status" class="muted"></span></div></div></template>';
+    return '<section class="card"><div class="qhead"><span class="qnum">Your history</span><h2>Your weeks so far</h2></div>' + tiles + chart +
+      '<div class="tablebox"><table><thead>' + head + '</thead><tbody>' + rows + '</tbody></table></div>' + correction + corrForm + '</section>';
+  }
+  function tile(big, small) { return '<div class="tile"><b>' + esc(big) + '</b><span>' + esc(small) + '</span></div>'; }
+
+  function wireHistory() {
+    var open = $('#corr-open');
+    if (!open) return;
+    open.addEventListener('click', function () {
+      var area = $('#corr-area');
+      area.innerHTML = $('#corr-tpl').innerHTML;
+      $('#corr-note').focus();
+      $('#corr-cancel').addEventListener('click', function () { load(false); });
+      $('#corr-send').addEventListener('click', function () {
+        var note = $('#corr-note').value.trim();
+        if (!note) { $('#corr-msg').textContent = 'Please write the correction first.'; return; }
+        $('#corr-send').disabled = true; $('#corr-msg').textContent = 'Sending…';
+        apiPost({ action: 'correct', t: TOKEN, week: $('#corr-week').value, note: note, submitted_by: $('#corr-who').value })
+          .then(function (r) { if (r.ok) load(false); else { $('#corr-msg').textContent = r.message || 'Something went wrong.'; $('#corr-send').disabled = false; } })
+          .catch(function () { $('#corr-msg').textContent = 'We could not reach the server. Please try again.'; $('#corr-send').disabled = false; });
+      });
+    });
+  }
+
+  /* ---------- scoreboard ---------- */
+  function scoreboardHtml() {
+    var s = view.scoreboard;
+    if (!s) return '';
+    var rev = String(s.phase).toLowerCase() === 'revenue';
+    var lead = rev ? 'From week 6 the scoreboard shows money received and paying customers.' : 'Until week 6 the scoreboard shows how hard each team is selling this week. From week 6 it switches to money received, paying customers and growth.';
+    var out = '<section class="card"><div class="qhead"><span class="qnum">The cohort scoreboard</span><h2>Where everyone stands, week ' + s.week + '</h2><p class="help">' + lead + '</p></div>';
+    if (s.direct.length) {
+      var dh = rev ? ['Team', 'Money this week', 'Money to date', 'Customers', 'Reports'] : ['Team', 'Asked', 'Said yes', 'Reports'];
+      out += '<h3>Direct track</h3>' + tableHtml(dh, s.direct.map(function (r) {
+        var cells = !r.reported && !rev ? [missing(2)] : rev ? [r.reported ? rand(r.revenueWeek) + change(r) : missingText(), rand(r.revenueTotal), r.customersTotal] : [r.asked, r.yes];
+        return { you: r.you, cells: [teamName(r)].concat(cells, [r.sent + ' of ' + r.due]) };
+      }));
+    }
+    if (s.organisation.length) {
+      var oh = rev ? ['Team', 'Signed or paid', 'Money to date', 'Furthest stage', 'Reports'] : ['Team', 'Moved forward', 'Furthest stage', 'Reports'];
+      out += '<h3>Organisation track</h3>' + tableHtml(oh, s.organisation.map(function (r) {
+        var cells = rev ? [r.signed, rand(r.revenueTotal), esc(r.furthest)] : [r.reported ? r.moved : missingText(), esc(r.furthest || '–')];
+        return { you: r.you, cells: [teamName(r)].concat(cells, [r.sent + ' of ' + r.due]) };
+      }));
+    }
+    return out + '</section>';
+  }
+  function teamName(r) { return esc(r.team) + (r.you ? ' (you)' : ''); }
+  function missing(span) { return { html: 'No report yet', span: span, cls: 'missing' }; }
+  function missingText() { return { html: 'No report yet', cls: 'missing' }; }
+  function change(r) {
+    if (r.revenueLast === null || r.revenueLast === undefined) return '';
+    var d = r.revenueWeek - r.revenueLast;
+    return d === 0 ? '' : ' <span class="muted">(' + (d > 0 ? '+' : '−') + rand(Math.abs(d)) + ')</span>';
+  }
+  function tableHtml(head, rows) {
+    return '<div class="tablebox"><table><thead><tr>' + head.map(function (h) { return '<th scope="col">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.map(function (r) {
+        return '<tr' + (r.you ? ' class="you"' : '') + '>' + r.cells.map(function (c, i) {
+          if (c && typeof c === 'object') return '<td class="' + (c.cls || '') + '"' + (c.span ? ' colspan="' + c.span + '"' : '') + '>' + c.html + '</td>';
+          return '<td' + (i === 0 ? ' class="team"' : '') + '>' + c + '</td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  load(false);
+})();
+</script>
+</body>
+</html>
