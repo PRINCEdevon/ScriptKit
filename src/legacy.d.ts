@@ -2,5 +2,3 @@
 
 // Menu and script editor.
 export function setup(): void;
-export function menuAddDemo(): void;
-export function menuRemoveDemo(): void;

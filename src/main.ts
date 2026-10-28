@@ -38,9 +38,10 @@ export {
   onOpen,
 } from './admin.js';
 
+// Demo data.
+export { menuAddDemo, menuRemoveDemo } from './demo.js';
+
 export {
   // Menu and script editor.
   setup,
-  menuAddDemo,
-  menuRemoveDemo,
 } from './legacy.js';

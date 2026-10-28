@@ -130,6 +130,11 @@ const EXTRACTED: string[] = [
   'menuCreateLinks',
   'menuEmailLinks',
   'checkSetup',
+  // PR 7: src/demo.ts
+  'menuAddDemo',
+  'addDemo_',
+  'menuRemoveDemo',
+  'removeDemo_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

@@ -17,10 +17,7 @@ import {
 } from './config.js';
 import {
   noonDate as d_,
-  dayKey as dstr_,
-  parseDay as parseDay_,
   timeZone as tz_,
-  readWeeks as weeks_,
 } from './dates.js';
 import {
   DEFAULT_RULES,
@@ -29,7 +26,6 @@ import {
   uploadSteps as uploadSteps_,
 } from './page.js';
 import {
-  recordReport as recordReport_,
   refreshReportLog as refreshReportLog_,
 } from './reports.js';
 import {
@@ -42,11 +38,7 @@ import {
 } from './sheets.js';
 import {
   createLinks as createLinks_,
-  allTeams as teamsAll_,
 } from './teams.js';
-import {
-  toNumber as num_,
-} from './utils.js';
 
 /**
  * Mashauri Revenue Accelerator: Monday report.
@@ -233,82 +225,6 @@ function setValidationList_(sh, col, list) {
   sh.getRange(2, col, 999, 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(list, true).setAllowInvalid(false).build());
 }
 
-/* ============================== Demo data ============================== */
-
-function menuAddDemo() {
-  var res = addDemo_();
-  toast_('Demo data added. The system now pretends today is ' + res.pretend + '. Open a demo team\'s "Report link" from the Teams tab to try the page.');
-}
-
-function addDemo_() {
-  removeDemo_();
-  var demo = [
-    ['DEMO1', 'Demo Direct team', 'Direct', 'Founder One, Founder Two'],
-    ['DEMO2', 'Demo Organisation team', 'Organisation', 'Founder One, Founder Two, Founder Three'],
-    ['DEMO3', 'Demo team: tutoring', 'Direct', 'A, B'],
-    ['DEMO4', 'Demo team: hair products', 'Direct', 'A, B'],
-    ['DEMO5', 'Demo team: laundry service', 'Direct', 'A, B'],
-    ['DEMO6', 'Demo team: school software', 'Organisation', 'A, B'],
-    ['DEMO7', 'Demo team: clinic booking', 'Organisation', 'A, B']
-  ];
-  demo.forEach(function (d) { appendRow_('teams', { team_id: d[0], team_name: d[1], track: d[2], status: 'Active', founders: d[3], notes: 'Demo data: remove with "Remove demo data".' }); });
-  createLinks_();
-  var weeks = weeks_();
-  var byId = {};
-  teamsAll_().forEach(function (t) { byId[t.team_id] = t; });
-  var R = function (by, rev, cust, asked, yes, no, ny, ga, gr, said, call) {
-    return { submitted_by: by, revenue: rev, new_customers: cust, asked: asked, yes: yes, no: no, not_yet: ny, goal_asks: ga, goal_revenue: gr,
-      customers_said: said, changing: '', goal_text: '', blocker: '', asked_names: '', wants_reply: 'No', mentor_call: call || 'Yes', mentor_note: '' };
-  };
-  var plan = [
-    ['DEMO1', 1, R('Founder One', 200, 1, 6, 1, 3, 2, 10, 400, 'Salon owners like it but want to pay at month end.'), []],
-    ['DEMO1', 2, R('Founder Two', 500, 3, 9, 3, 2, 4, 15, 500, 'Two salons asked for a cheaper trial.'), []],
-    ['DEMO3', 1, R('A', 0, 0, 8, 0, 6, 2, 12, 300, 'Parents want results before paying.', 'No'), []],
-    ['DEMO3', 2, R('A', 300, 2, 12, 2, 7, 3, 15, 500, 'A free first session helped.', 'No'), []],
-    ['DEMO4', 1, R('A', 450, 3, 10, 3, 5, 2, 15, 600, 'Price is fine; delivery is the issue.'), []],
-    ['DEMO4', 2, R('A', 600, 4, 16, 4, 9, 3, 20, 800, 'Repeat buyers asked for bigger bottles.'), []],
-    ['DEMO5', 1, R('A', 0, 0, 3, 0, 1, 2, 8, 200, 'Students do not trust a new service.'), []],
-    ['DEMO2', 1, R('Founder One', 0, 0, 3, 1, 0, 2, 4, 0, 'Schools want to see it working first.'),
-      [['Secondary school, Soweto', 2, 'Demo to the deputy principal'], ['Private clinic, Braamfontein', 1, 'First meeting'], ['Municipal library service', 3, 'Proposal sent']]],
-    ['DEMO2', 2, R('Founder Two', 0, 0, 3, 1, 1, 1, 4, 0, 'The library needs approval from the budget committee.'),
-      [['Secondary school, Soweto', 2, 'Waiting for a reply'], ['Private clinic, Braamfontein', 1, 'Second meeting booked'], ['Municipal library service', 3, 'Waiting for budget meeting']]],
-    ['DEMO6', 1, R('A', 0, 0, 4, 2, 1, 1, 5, 0, 'Principals like it; governing bodies decide.'), [['School A', 2, ''], ['School B', 1, '']]],
-    ['DEMO6', 2, R('A', 0, 0, 5, 2, 2, 1, 5, 0, 'Governing body meets in January.'), [['School A', 4, 'Head agreed'], ['School B', 2, ''], ['School C', 1, '']]],
-    ['DEMO7', 1, R('A', 0, 0, 2, 1, 0, 1, 4, 0, 'Clinics want a pilot.'), [['Clinic A', 1, '']]],
-    ['DEMO7', 2, R('A', 0, 0, 3, 1, 1, 1, 4, 0, 'Clinic A will try it for a month.'), [['Clinic A', 3, 'Pilot price sent'], ['Clinic B', 1, '']]],
-    ['DEMO3', 3, R('A', 250, 1, 11, 1, 6, 4, 15, 500, 'Parents prefer weekly payments.', 'Yes'), []],
-    ['DEMO4', 3, R('A', 900, 5, 22, 5, 12, 5, 25, 1000, 'Hair salons want to stock it.'), []],
-    ['DEMO6', 3, R('A', 0, 0, 4, 2, 1, 1, 5, 0, 'School A wants a letter template.'), [['School A', 4, ''], ['School B', 3, 'Price sent'], ['School C', 2, '']]]
-  ];
-  plan.forEach(function (p) {
-    var team = byId[p[0]];
-    var w = find_(weeks, function (x) { return x.week === p[1]; });
-    var pipeline = p[3].map(function (o) { return { organisation: o[0], stage: o[1], note: o[2] }; });
-    var when = parseDay_(dstr_(w.due)); when.setHours(10, 15);
-    recordReport_(team, w, weeks, p[2], pipeline, [], when, false);
-  });
-  // One reply already sent, so the history shows how replies appear.
-  var t = table_('reports');
-  var r1 = find_(t.rows, function (r) { return r.team_id === 'DEMO1' && num_(r.week) === 1; });
-  if (r1) setCells_(t, r1._row, { reply: 'A real start: a paying customer in week 1. Next week, ask for payment in the first conversation, not the third.', reply_sent_at: new Date() });
-  var w3 = find_(weeks, function (x) { return x.week === 3; }) || weeks[weeks.length - 1];
-  var pretend = dstr_(w3.opens);
-  setSetting_('pretend_today', pretend);
-  try { refreshReportLog_(); } catch (e) { }
-  return { pretend: pretend };
-}
-
-function menuRemoveDemo() { removeDemo_(); setSetting_('pretend_today', ''); toast_('Demo data removed, and the date is back to today.'); }
-
-function removeDemo_() {
-  ['reports', 'pipeline', 'corrections', 'teams'].forEach(function (k) {
-    var t = table_(k);
-    var rows = t.rows.filter(function (r) { return /^DEMO/.test(String(r.team_id)); }).map(function (r) { return r._row; }).sort(function (a, b) { return b - a; });
-    rows.forEach(function (n) { t.sheet.deleteRow(n); });
-  });
-  try { refreshReportLog_(); } catch (e) { }
-}
-
 /* ============================== Sheet helpers ============================== */
 
 /** Gives every real report a tick box, and removes tick boxes (and anything else) from the empty rows below. */
@@ -336,6 +252,4 @@ function find_(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) r
 // Apps Script entrypoints, re-exported by src/main.ts. Apps Script calls these by name.
 export {
   setup,
-  menuAddDemo,
-  menuRemoveDemo,
 };
