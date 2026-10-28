@@ -95,11 +95,22 @@ export class FakeRange {
     return this.sheet.filter;
   }
 
-  // Formatting and validation: accepted, not modelled.
+  /** For example "rows 2-1000 of column 3". */
+  private where(): string {
+    const last = (start: number, count: number) => start + count - 1;
+    return (
+      `rows ${this.row}-${last(this.row, this.numRows)} of column ` +
+      (this.numColumns === 1 ? this.column : `${this.column}-${last(this.column, this.numColumns)}`)
+    );
+  }
+
+  // Drop-downs, tick boxes and text wrapping are recorded (sheet.formats) but not applied.
   clearDataValidations() {
+    this.sheet.formats.push(`no validation: ${this.where()}`);
     return this;
   }
-  setDataValidation() {
+  setDataValidation(rule: unknown) {
+    this.sheet.formats.push(`validation ${JSON.stringify(rule)}: ${this.where()}`);
     return this;
   }
   setFontWeight() {
@@ -111,7 +122,8 @@ export class FakeRange {
   setBackground() {
     return this;
   }
-  setWrap() {
+  setWrap(wrap: boolean) {
+    if (wrap) this.sheet.formats.push(`wrap: ${this.where()}`);
     return this;
   }
   setVerticalAlignment() {
@@ -145,6 +157,8 @@ export class FakeSheet {
   maxRows = 1000;
   maxColumns = 26;
   frozenRows = 0;
+  /** Formatting applied, in order (see FakeRange). */
+  formats: string[] = [];
   hiddenColumns: number[] = [];
   filter: FakeFilter | null = null;
 
@@ -651,10 +665,11 @@ export class FakeGoogle {
           newDataValidation: () => {
             const builder = strict(
               {
-                requireValueInList: () => builder,
-                requireCheckbox: () => builder,
-                setAllowInvalid: () => builder,
-                build: () => ({}),
+                rule: {} as Record<string, unknown>,
+                requireValueInList: (values: string[]) => ((builder.rule.list = values), builder),
+                requireCheckbox: () => ((builder.rule.checkbox = true), builder),
+                setAllowInvalid: (allow: boolean) => ((builder.rule.allowInvalid = allow), builder),
+                build: () => builder.rule,
               },
               'DataValidationBuilder',
             );

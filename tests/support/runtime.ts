@@ -227,6 +227,7 @@ export function stateOf(google: FakeGoogle) {
       values: sheet.getDataRange().getValues(),
       frozenRows: sheet.frozenRows,
       hiddenColumns: sheet.hiddenColumns,
+      formats: sheet.formats,
       filter: sheet.filter?.criteria ?? null,
     })),
     activeSheet: spreadsheet.activeSheet?.getName() ?? null,
