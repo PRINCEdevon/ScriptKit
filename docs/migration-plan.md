@@ -108,10 +108,15 @@ Before a live programme switches from the pasted `Code.gs` to the bundle:
    Corrections tabs and the proof folder.
 3. With `send_all_emails_to` set to your own address, try "Testing > Send reminders now" and
    "Send Tuesday digests now".
-4. For the live project: compare its manifest with `appsscript.json` (time zone included),
+4. Decide which Google account pushes and deploys the live project. This checkout's clasp
+   login is a personal account, which may not be able to edit it. The manifest runs the web
+   app as the deploying user (`executeAs: USER_DEPLOYING`), which likely also decides whose
+   mailbox sends the emails and whose Drive holds the proof files; confirm that against
+   Google's web app deployment documentation.
+5. For the live project: compare its manifest with `appsscript.json` (time zone included),
    point `.clasp.json` at it, `pnpm clasp:push`, then update its existing web app deployment
    to the new version so the report page's address stays the same. Run "Check permissions".
-5. Keep the pasted `Code.gs` (a copy of `legacy/Code.gs`) at hand: pushing it back and
+6. Keep the pasted `Code.gs` (a copy of `legacy/Code.gs`) at hand: pushing it back and
    redeploying is the way back.
 
 ## After the migration
