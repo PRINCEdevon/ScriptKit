@@ -6,15 +6,14 @@ modules, a bundler, linting, formatting, unit tests, Git hooks and CI. It does n
 framework or wrap Google's services; application code still calls `SpreadsheetApp`,
 `DriveApp` and `MailApp` directly.
 
-The first application is the **Revenue Accelerator Monday report**, which is being migrated
-from one large legacy file into this repository, one pull request at a time.
+The first application is the **Revenue Accelerator Monday report**, migrated from one large
+legacy file into typed modules over seven pull requests.
 
-> **Current status: migration in progress.** The bundle runs the whole application behind all
-> 21 of its entrypoints. The web app, reports, feedback, scoreboard, emails, triggers and the
-> spreadsheet, settings, date and team code are typed modules in `src/`. Setup, the admin menu
-> and demo data are still the original code in `src/legacy.js`. The live Sheets keep running
-> the pasted `Code.gs` until the migrated bundle is deployed. See
-> [docs/migration-plan.md](docs/migration-plan.md) for progress.
+> **Current status: migrated, not yet live.** The whole application is typed modules in
+> `src/`, built into one bundle with the same 21 entrypoints as the original. The original,
+> `legacy/Code.gs`, stays as the behaviour reference the tests compare against. The live Sheets
+> keep running the pasted original until the bundle is deployed: see the go-live checklist in
+> [docs/migration-plan.md](docs/migration-plan.md#going-live).
 
 ## The Revenue Accelerator
 
@@ -86,15 +85,25 @@ not changed behaviour.
 ## Project layout
 
 ```text
-src/         Apps Script source. main.ts lists the entrypoints; legacy.js is the
-             transitional copy of the original, shrinking as code moves into typed modules.
+src/         Apps Script source: one module per feature; main.ts lists the entrypoints.
 tests/       Vitest tests; support/ holds the fake Apps Script services.
 scripts/     Build and Git hook scripts.
 legacy/      The original Code.gs, kept byte-for-byte as the behaviour reference.
 web/         The HTML report page, deployed separately from the backend.
-docs/        Migration plan, map of the legacy code, and known issues.
+docs/        Migration plan and go-live checklist, legacy map, known issues.
 dist/        Build output (generated, not committed).
 ```
+
+### Modules
+
+| Module                                                                   | What it does                                                                  |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `api.ts`                                                                 | The web app (`doGet`, `doPost`) and the team page view.                       |
+| `reports.ts`, `pipeline.ts`, `drive.ts`                                  | Submissions, validation, recording, corrections, the Report log, proof files. |
+| `feedback.ts`, `scoreboard.ts`                                           | Instant feedback rules and the cohort scoreboard.                             |
+| `email.ts`, `triggers.ts`                                                | Reminders, digests, replies, test mode and the time-driven triggers.          |
+| `admin.ts`, `page.ts`, `setup.ts`, `demo.ts`                             | The Sheet menu, report page preparation, setup and repair, demo data.         |
+| `sheets.ts`, `config.ts`, `dates.ts`, `teams.ts`, `utils.ts`, `types.ts` | Tabs, settings, dates and weeks, teams and links, shared helpers and types.   |
 
 ## Git hooks
 

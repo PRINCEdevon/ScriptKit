@@ -1,28 +1,27 @@
 # Map of the legacy code
 
-How the functions in `legacy/Code.gs` (and its transitional copy `src/legacy.js`) relate to
-each other, grouped by the PR that will move them into typed modules. Functions ending in `_`
-are private: Apps Script cannot call them by name. Every other top-level function is one of
-the 21 entrypoints listed in [migration-plan.md](migration-plan.md).
+Where each top-level function and variable of `legacy/Code.gs` went, grouped by the PR that
+moved it into a typed module in `src/`. Functions ending in `_` were private (Apps Script
+cannot call them by name); every other top-level function is one of the 21 entrypoints listed
+in [migration-plan.md](migration-plan.md), now exported by `src/main.ts` under the same name.
+`tests/legacy-source.test.ts` checks that every declaration is accounted for.
 
 ## Shared state
 
-- **Constants:** `DEFAULT_WEEKS`, `OLD_RULE_TEXT` and `OLD_DEFAULTS` are still in
-  `src/legacy.js`; `LOG_TAB` is in `src/reports.ts`. `TABS` (the spreadsheet schema) is in `src/sheets.ts`; `DEFAULT_TZ` and
-  `DEFAULT_SETTINGS` in `src/config.ts`; `STAGE_NAMES` in `src/pipeline.ts`; `DEFAULT_RULES`
-  in `src/feedback.ts`.
-- **Per-execution cache:** `SETTINGS_CACHE_`, filled by `settings()` and cleared by every
-  settings write. It is the only top-level variable that is reassigned. `src/config.ts` keeps
-  it as a real global variable (`globalThis.SETTINGS_CACHE_`), as the original script did,
-  because `setup` and `tidySettings_` still clear it by assigning `SETTINGS_CACHE_ = null`
-  and an imported binding cannot be assigned. PR 7 moves those two and turns the cache into
-  a module variable.
+- **Constants:** `TABS` is in `src/sheets.ts`; `DEFAULT_TZ` and `DEFAULT_SETTINGS` in
+  `src/config.ts`; `STAGE_NAMES` in `src/pipeline.ts`; `DEFAULT_RULES` in `src/feedback.ts`;
+  `LOG_TAB` in `src/reports.ts`; `DEFAULT_WEEKS`, `OLD_DEFAULTS` and `OLD_RULE_TEXT` in
+  `src/setup.ts`.
+- **Per-run settings cache:** `SETTINGS_CACHE_` is now a module variable in `src/config.ts`,
+  filled by `settings()` and cleared by `clearSettingsCache()` on every settings write. (Until
+  PR 7 it was a real global, because legacy `setup` and `tidySettings_` assigned it directly.)
 - **Script property:** `SHEET_ID`, written by `setup`, read by `spreadsheet()`.
-- **Dead code:** `fmtStamp_` is never called. esbuild leaves it out of the bundle.
+- **Retired:** `fmtStamp_` was never called; `find_` is replaced by `Array.prototype.find`
+  (with `?? null` where the original's `null` matters).
 
 ## PR 3: Sheets, settings and teams (done)
 
-`src/legacy.js` imports these under their old names (for example
+During the migration `src/legacy.js` imported these under their old names (for example
 `import { readTable as table_ } from './sheets.js'`).
 
 | Legacy                                                                                               | Now                                                                                                                                                            |
@@ -38,8 +37,8 @@ the 21 entrypoints listed in [migration-plan.md](migration-plan.md).
 
 Helpers that typed code needed moved with their first typed caller (typed modules never
 import from `src/legacy.js`): `median_` in PR 4; `clean_`, `listOf_`, `byWeek_`,
-`lastBefore_`, `uniq_` and `parseJson_` in PR 5. `find_` stays in `src/legacy.js` for the
-code that still uses it; typed code uses `Array.prototype.find` (with `?? null` where the
+`lastBefore_`, `uniq_` and `parseJson_` in PR 5. `find_` stayed in `src/legacy.js` until it
+was deleted in PR 7; typed code uses `Array.prototype.find` (with `?? null` where the
 original's `null` matters).
 
 ## PR 4: feedback and scoreboard (done)
@@ -81,14 +80,12 @@ All email now goes through typed code; `menuEmailLinks` (PR 7) imports `sendMail
 | `menuEmailsOn`, `menuEmailsOff`, `removeTriggers_`, `autoDaily`             | `src/triggers.ts`: the same names, with `removeTriggers`                                  |
 | `toast_`                                                                    | `src/sheets.ts`: `toast`                                                                  |
 
-## PR 7: administration
+## PR 7: administration (done)
 
-| Function                                                                                                                | Role                                                      |
-| ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `onOpen`                                                                                                                | Builds the Revenue Accelerator menu.                      |
-| `setup` → `ensureTab_`, `tidySettings_`, `upgradeRuleText_`, `writeStartHere_`, `setValidationList_`, `tidyReportRows_` | Create or repair every tab without overwriting edits.     |
-| `checkSetup`                                                                                                            | Permission and configuration check.                       |
-| `menuShowThisWeek`, `menuShowAll`, `menuRefreshLog`                                                                     | Filter the Reports tab; rebuild the Report log tab.       |
-| `menuCreateLinks`, `menuEmailLinks`                                                                                     | Create links; email each team its link once.              |
-| `menuPreparePage` → `preparePage_`, `uploadSteps_`, `htmlEscape_`                                                       | Fill in the report page template from Drive.              |
-| `menuAddDemo` → `addDemo_`, `menuRemoveDemo` → `removeDemo_`                                                            | Demo teams and reports, recorded through `recordReport_`. |
+| Legacy                                                                                                                 | Now                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `onOpen`, `menuShowThisWeek`, `menuShowAll`, `menuRefreshLog`, `menuCreateLinks`, `menuEmailLinks`, `checkSetup`       | `src/admin.ts`: the same names                                                                                                   |
+| `menuPreparePage`, `preparePage_`, `uploadSteps_`, `htmlEscape_`                                                       | `src/page.ts`: `menuPreparePage`, `preparePage`, `uploadSteps`, `htmlEscape`                                                     |
+| `menuAddDemo`, `addDemo_`, `menuRemoveDemo`, `removeDemo_`                                                             | `src/demo.ts`: `menuAddDemo`, `addDemo`, `menuRemoveDemo`, `removeDemo`                                                          |
+| `setup`, `tidySettings_`, `writeStartHere_`, `upgradeRuleText_`, `ensureTab_`, `setValidationList_`, `tidyReportRows_` | `src/setup.ts`: `setup`, `tidySettings`, `writeStartHere`, `upgradeRuleText`, `ensureTab`, `setValidationList`, `tidyReportRows` |
+| `DEFAULT_WEEKS`, `OLD_DEFAULTS`, `OLD_RULE_TEXT`                                                                       | `src/setup.ts`: the same names                                                                                                   |

@@ -46,7 +46,7 @@ version are updated at different times.
 
 ## Preparing and deploying the page
 
-The backend's "Prepare the report page" menu item (`preparePage_` in `legacy/Code.gs`)
+The backend's "Prepare the report page" menu item (`preparePage` in `src/page.ts`)
 produces the uploadable page:
 
 1. It looks in the Sheet's Drive folder for a file named `<short name>-report TEMPLATE.html`
