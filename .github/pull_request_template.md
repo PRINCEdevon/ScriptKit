@@ -1,26 +1,29 @@
-## What changed
+# <!-- Title, for example: Fix: Send Each Week's Digest Once -->
 
-<!-- A short summary of the change. -->
+## Summary
 
-## Why
+<!-- What this pull request does and why, in two or three sentences. -->
 
-<!-- The problem this solves, or the migration step it completes (see docs/migration-plan.md). -->
+<br/>
 
-## How
+## Changelog
 
-<!-- Notable implementation decisions. -->
+### Added
 
-## Testing
+- <!-- New modules, tests, docs… -->
 
-- [ ] `pnpm check` passes locally
-- [ ] Tests added or updated for the changed behaviour
+### Changed
 
-<!-- Anything verified manually, for example in a staging Apps Script project. -->
+- <!-- Behaviour, structure or docs that changed. Say "no behaviour change" for refactors. -->
 
-## Risks and limitations
+### Testing
 
-<!-- Behaviour changes, manual steps, anything not yet verified against Google services. -->
+- [ ] `pnpm check` passes
+- <!-- What the tests show, and anything checked by hand -->
 
-## Follow-up
+<br/>
+<hr/>
 
-<!-- Work deliberately left for a later PR. -->
+### Notes
+
+<!-- Anything not verified on Google, risks, follow-ups. -->
