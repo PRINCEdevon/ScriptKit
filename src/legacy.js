@@ -16,34 +16,19 @@ import {
   settings as settings_,
 } from './config.js';
 import {
-  currentWeek as currentWeek_,
   noonDate as d_,
   dayKey as dstr_,
-  longDate as longDate_,
   parseDay as parseDay_,
-  today as todayStr_,
   timeZone as tz_,
   readWeeks as weeks_,
 } from './dates.js';
 import {
-  parentFolder as parentFolder_,
-} from './drive.js';
-import {
-  emailDestination as emailDestination_,
-  menuDigestsNow,
-  menuRemindersNow,
-  menuSendReplies,
-  sendMail as sendMail_,
-} from './email.js';
-import {
   DEFAULT_RULES,
 } from './feedback.js';
 import {
-  menuPreparePage,
   uploadSteps as uploadSteps_,
 } from './page.js';
 import {
-  LOG_TAB,
   recordReport as recordReport_,
   refreshReportLog as refreshReportLog_,
 } from './reports.js';
@@ -57,15 +42,9 @@ import {
 } from './sheets.js';
 import {
   createLinks as createLinks_,
-  isDemo as isDemo_,
   allTeams as teamsAll_,
 } from './teams.js';
 import {
-  menuEmailsOff,
-  menuEmailsOn,
-} from './triggers.js';
-import {
-  listOf as listOf_,
   toNumber as num_,
 } from './utils.js';
 
@@ -110,117 +89,6 @@ var OLD_RULE_TEXT = {
   checkpoint_org_ok: { detail: ["You already have an organisation that has signed or paid. Keep the signed letter or proof of payment ready."] },
   cohort_org: { lead: ["The middle Organisation-track team moved {median_moved} organisations forward this week."] }
 };
-
-/* ============================== Menu ============================== */
-
-function onOpen() {
-  SpreadsheetApp.getUi().createMenu('Revenue Accelerator')
-    .addItem('Show this week\'s reports', 'menuShowThisWeek')
-    .addItem('Show all reports', 'menuShowAll')
-    .addItem('Send ticked replies', 'menuSendReplies')
-    .addItem('Refresh the report log', 'menuRefreshLog')
-    .addSeparator()
-    .addItem('Prepare the report page…', 'menuPreparePage')
-    .addItem('Create missing team links', 'menuCreateLinks')
-    .addItem('Email teams their links…', 'menuEmailLinks')
-    .addSeparator()
-    .addItem('Turn on automatic emails', 'menuEmailsOn')
-    .addItem('Turn off automatic emails', 'menuEmailsOff')
-    .addSeparator()
-    .addItem('Add demo data', 'menuAddDemo')
-    .addItem('Remove demo data', 'menuRemoveDemo')
-    .addSubMenu(SpreadsheetApp.getUi().createMenu('Testing')
-      .addItem('Send reminders now…', 'menuRemindersNow')
-      .addItem('Send Tuesday digests now…', 'menuDigestsNow'))
-    .addItem('Set up or repair the sheet', 'setup')
-    .addItem('Check permissions', 'checkSetup')
-    .addToUi();
-}
-
-function menuShowThisWeek() {
-  var cur = currentWeek_(weeks_(), todayStr_());
-  var t = table_('reports');
-  var sh = t.sheet;
-  if (sh.getFilter()) sh.getFilter().remove();
-  var range = sh.getRange(1, 1, Math.max(sh.getLastRow(), 2), sh.getLastColumn());
-  var f = range.createFilter();
-  if (cur) f.setColumnFilterCriteria(t.col.week, SpreadsheetApp.newFilterCriteria().whenNumberEqualTo(cur.week).build());
-  sh.activate();
-  toast_(cur ? 'Showing week ' + cur.week + '. Type your reply in "Your reply", tick "Send reply", then use "Send ticked replies".' : 'No week is open yet.');
-}
-
-function menuShowAll() {
-  var sh = table_('reports').sheet;
-  if (sh.getFilter()) sh.getFilter().remove();
-  sh.activate();
-}
-
-function menuRefreshLog() { refreshReportLog_(); ss_().getSheetByName(LOG_TAB).activate(); }
-
-function menuCreateLinks() {
-  var n = createLinks_();
-  var msg = [];
-  if (n.made) msg.push(n.made + ' new team ' + (n.made === 1 ? 'link' : 'links') + ' created.');
-  if (n.changed) msg.push(n.changed + ' existing ' + (n.changed === 1 ? 'link' : 'links') + ' updated to the address in Settings.');
-  toast_(msg.length ? msg.join(' ') : 'Every team already has an up-to-date link.');
-}
-
-function menuEmailLinks() {
-  createLinks_();
-  var ui = SpreadsheetApp.getUi();
-  var settings = settings_();
-  var t = table_('teams');
-  var targets = t.rows.filter(function (r) { return r.team_name && !isDemo_(r) && String(r.status).toLowerCase() !== 'stopped' && listOf_(r.founder_emails).length && !r.link_sent_at; });
-  if (!targets.length) { ui.alert('There are no teams waiting for their link. (A team gets its link once; clear "Link emailed at" to send it again.)'); return; }
-  var ok = ui.alert('Email links', 'This emails ' + targets.length + (targets.length === 1 ? ' team its' : ' teams their') + ' private report link:\n\n' + targets.map(function (r) { return '• ' + r.team_name; }).join('\n') + '\n\n' + emailDestination_() + '\n\nContinue?', ui.ButtonSet.YES_NO);
-  if (ok !== ui.Button.YES) return;
-  var weeks = weeks_();
-  var first = weeks[0];
-  targets.forEach(function (r) {
-    var names = listOf_(r.founders).map(function (n) { return n.split(' ')[0]; });
-    sendMail_(listOf_(r.founder_emails).join(','), '', 'Your ' + reportName_() + ' link: ' + settings.programme_name,
-      'Hello ' + (names.length ? names.join(', ') : r.team_name) + ',\n\n' +
-      'This is your team\'s private link for the Monday report:\n' + r.report_link + '\n\n' +
-      'Every Monday, one of you fills it in for the week before. It takes about seven minutes, and you get feedback straight away. ' +
-      'Keep the link within your team: anyone who has it can report for you.\n\n' +
-      (first ? 'Your first report opens on ' + longDate_(first.opens) + ' and is due on ' + longDate_(first.due) + '.\n\n' : '') +
-      settings.signoff);
-    setCells_(t, r._row, { link_sent_at: new Date() });
-  });
-  toast_('Links sent to ' + targets.length + (targets.length === 1 ? ' team.' : ' teams.'));
-}
-
-/* ============================== Checking permissions ============================== */
-
-/**
- * Run this from the script editor (or the menu) to check that Google has given the script every
- * permission it needs. If one is missing, Google asks for it again.
- */
-function checkSetup() {
-  var lines = [];
-  var ok = true;
-  function check(label, fn) {
-    try { var extra = fn(); lines.push('OK  ' + label + (extra ? ' (' + extra + ')' : '')); }
-    catch (e) { ok = false; lines.push('NOT OK  ' + label + ': ' + (e && e.message || e)); }
-  }
-  check('Read and write this spreadsheet', function () { return 'Sheet "' + ss_().getName() + '", ' + teamsAll_().length + ' teams in the Teams tab'; });
-  check('Use Google Drive (proof files, the report page)', function () {
-    var folder = parentFolder_();
-    var found = folder.getFilesByName(pageTemplateName_()).hasNext();
-    return 'folder "' + folder.getName() + '"' + (found ? ', page template "' + pageTemplateName_() + '" found' : ', page template "' + pageTemplateName_() + '" NOT found');
-  });
-  check('Send email', function () { return MailApp.getRemainingDailyQuota() + ' emails left today'; });
-  check('Run automatic emails', function () { return ScriptApp.getProjectTriggers().length + ' automatic jobs set'; });
-  var s = settings_();
-  lines.push('');
-  lines.push('This Sheet: ' + s.programme_name + ' (' + reportName_() + '), page ' + s.report_page_url);
-  lines.push(emailDestination_());
-  if (String(s.pretend_today || '').trim()) lines.push('Pretend date is set to ' + dstr_(s.pretend_today) + '. Clear it before going live.');
-  var msg = (ok ? 'Everything is in place.' : 'Something is missing. Run checkSetup again and allow every permission Google asks for, ticking all the boxes if it shows a list.') + '\n\n' + lines.join('\n');
-  Logger.log(msg);
-  try { SpreadsheetApp.getUi().alert('Revenue Accelerator: permissions check', msg, SpreadsheetApp.getUi().ButtonSet.OK); } catch (e) { /* run from the editor: see the log */ }
-  return msg;
-}
 
 /* ============================== Setup ============================== */
 
@@ -467,14 +335,7 @@ function fmtStamp_(d) { return Utilities.formatDate(d, tz_(), 'yyyy-MM-dd HH:mm'
 function find_(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
 // Apps Script entrypoints, re-exported by src/main.ts. Apps Script calls these by name.
 export {
-  onOpen,
   setup,
-  checkSetup,
-  menuShowThisWeek,
-  menuShowAll,
-  menuRefreshLog,
-  menuCreateLinks,
-  menuEmailLinks,
   menuAddDemo,
   menuRemoveDemo,
 };

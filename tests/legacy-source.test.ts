@@ -122,6 +122,14 @@ const EXTRACTED: string[] = [
   'uploadSteps_',
   'preparePage_',
   'htmlEscape_',
+  // PR 7: src/admin.ts
+  'onOpen',
+  'menuShowThisWeek',
+  'menuShowAll',
+  'menuRefreshLog',
+  'menuCreateLinks',
+  'menuEmailLinks',
+  'checkSetup',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

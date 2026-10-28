@@ -27,17 +27,20 @@ export { autoDaily, menuEmailsOff, menuEmailsOn } from './triggers.js';
 // Preparing the report page.
 export { menuPreparePage } from './page.js';
 
+// The menu, its general items and the permissions check.
 export {
-  // Simple trigger that builds the menu.
-  onOpen,
-  // Menu and script editor.
-  setup,
   checkSetup,
-  menuShowThisWeek,
-  menuShowAll,
-  menuRefreshLog,
   menuCreateLinks,
   menuEmailLinks,
+  menuRefreshLog,
+  menuShowAll,
+  menuShowThisWeek,
+  onOpen,
+} from './admin.js';
+
+export {
+  // Menu and script editor.
+  setup,
   menuAddDemo,
   menuRemoveDemo,
 } from './legacy.js';
