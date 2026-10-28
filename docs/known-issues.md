@@ -23,10 +23,10 @@ week 10 digest goes out every Tuesday until automatic emails are turned off.
 
 ### Reporting never closes after the last week (Confirmed)
 
-`currentWeek_` (now `currentWeek` in `src/dates.ts`) returns the latest week whose open date
-has passed, with no end date. After
-week 10, the report page keeps showing week 10 and `submitReport_` keeps accepting late week
-10 reports. Whether the programme should close needs a product decision.
+`currentWeek_` (now `currentWeek` in `src/shared/dates.ts`) returns the latest week whose open
+date has passed, with no end date. After week 10, the report page keeps showing week 10 and
+`submitReport_` keeps accepting late week 10 reports. Whether the programme should close needs a
+product decision.
 
 ### Test mode still records emails as sent (Confirmed)
 
@@ -66,10 +66,11 @@ directly to the web app.
 
 ### Money is stored with cents but always shown rounded (Confirmed)
 
-`validate_` keeps money to two decimal places, but `money_` (now `money` in `src/config.ts`,
-used in feedback, digests and the page) rounds to whole units, so 299.50 is shown as 300.
-`parseNumber_` (now `parseNumber` in `src/utils.ts`) also removes commas, so a decimal comma
-such as `1,5` is read as 15, and it removes the letter R anywhere in the value.
+`validate_` keeps money to two decimal places, but `money_` (now `money` in
+`src/shared/settings.ts`, used in feedback, digests and the page) rounds to whole units, so
+299.50 is shown as 300. `parseNumber_` (now `parseNumber` in `src/shared/utils.ts`) also removes
+commas, so a decimal comma such as `1,5` is read as 15, and it removes the letter R anywhere in
+the value.
 
 ### Proof upload limits differ from the message, and types are not checked (Confirmed)
 
@@ -81,8 +82,8 @@ private to the script owner's Drive.
 ### Number-only team IDs never match their reports (Confirmed)
 
 `reportsAll_` converts each report's team ID to text, but `teamsAll_` (now `allTeams` in
-`src/teams.ts`) returns the Teams cell as stored. A team ID typed as a number (such as 101) is
-read as a number, so `r.team_id === team.team_id` is never true: the team never sees its
+`src/shared/teams.ts`) returns the Teams cell as stored. A team ID typed as a number, such as
+101, is read as a number, so `r.team_id === team.team_id` is never true: the team never sees its
 reports, and the duplicate check in `submitReport_` does not stop repeat submissions. IDs
 created by "Create missing team links" (T01, T02, ...) are text and are not affected.
 
@@ -96,41 +97,41 @@ on the same row, and one would be lost.
 
 ### A team's link is its only credential (By design)
 
-The private code in a team's link (`teamByToken` in `src/teams.ts`) is all that is needed to
-read the team's history and submit reports or corrections for it. Codes do not expire. The
-team view also includes the scoreboard, which shows every active team's name and money
-received (`scoreboard_`), and error responses include raw exception messages from `doGet` and
-`doPost`. The link email asks teams to keep the link private.
+The private code in a team's link (`teamByToken` in `src/shared/teams.ts`) is all that is needed
+to read the team's history and submit reports or corrections for it. Codes do not expire. The
+team view also includes the scoreboard, which shows every active team's name and money received
+(`scoreboard_`), and error responses include raw exception messages from `doGet` and `doPost`.
+The link email asks teams to keep the link private.
 
 ## Feedback wording
 
 ### "Last week" comparisons use the previous report (Confirmed)
 
-`asks_change`, `money_flat` and `growth` (in `src/feedback.ts`) compare with the team's
-previous report (`lastBefore_`). If a team skipped a week, that report is older than last week, but the
-wording still says "last week" or "two weeks running".
+`asks_change`, `money_flat` and `growth` (in `src/feedback/rules.ts`) compare with the team's
+previous report (`lastBefore_`). If a team skipped a week, that report is older than last week,
+but the wording still says "last week" or "two weeks running".
 
 ### An unchanged week still shows the "Money down" flag (Confirmed)
 
-From week 6, the `growth` rule (in `src/feedback.ts`) compares money received with the previous
-report. When the amount is exactly the same, the note correctly says "unchanged at 0%", but the
-check returns no flag value, so the rule's default flag ("Money down") is shown to the
-programme manager anyway. `tests/feedback.test.ts` pins the current behaviour.
+From week 6, the `growth` rule (in `src/feedback/rules.ts`) compares money received with the
+previous report. When the amount is exactly the same, the note correctly says "unchanged at 0%",
+but the check returns no flag value, so the rule's default flag ("Money down") is shown to the
+programme manager anyway. `tests/feedback/rules.test.ts` pins the current behaviour.
 
 ### An organisation called "Constructor" is "listed twice" (Confirmed)
 
-`validate_` (now `validateReport` in `src/reports.ts`) remembers organisation names, lowercased,
-in a plain JavaScript object. Two lowercase names already exist on every such object,
-`constructor` and `__proto__`, so an organisation called "Constructor" (or `__proto__`) is
-reported as "listed twice" and the report cannot be sent. Unlikely with real names;
-`tests/reports.test.ts` pins the current behaviour.
+`validate_` (now `validateReport` in `src/reports/reports.ts`) remembers organisation names,
+lowercased, in a plain JavaScript object. Two lowercase names already exist on every such
+object, `constructor` and `__proto__`, so an organisation called "Constructor" (or `__proto__`)
+is reported as "listed twice" and the report cannot be sent. Unlikely with real names;
+`tests/reports/reports.test.ts` pins the current behaviour.
 
 ## Fixed
 
 ### "Set up or repair the sheet" failed once rows had been deleted (fixed in `fix/setup-deleted-rows`)
 
 `setup` formatted a fixed 1000 rows (text wrapping) and 999 rows (drop-downs), which ran past
-the end of a tab that had lost rows, for example after "Remove demo data", and stopped with
-"The coordinates of the range are outside the dimensions of the sheet". It now formats whole
-columns, however many rows a tab has, so tabs longer than 1000 rows also get drop-downs on
-every row. A fresh 1000-row tab is formatted exactly as before. Pinned in `tests/setup.test.ts`.
+the end of a tab that had lost rows, for example after "Remove demo data", and stopped with "The
+coordinates of the range are outside the dimensions of the sheet". It now formats whole columns,
+however many rows a tab has, so tabs longer than 1000 rows also get drop-downs on every row. A
+fresh 1000-row tab is formatted exactly as before. Pinned in `tests/admin/setup.test.ts`.

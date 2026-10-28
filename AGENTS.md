@@ -13,11 +13,12 @@ works and `docs/migration-plan.md` for what is being done now.
   top-level function. Menus and installed triggers call these by name, so never rename one.
 - `legacy/Code.gs` is the original application and the behaviour reference. Never edit it;
   a test checks its hash. `docs/legacy-map.md` maps each original function to its module.
-- Modules import in one direction (no cycles): `types` and `utils` at the bottom, `main` at
-  the top.
+- Code lives in feature folders: `shared/`, `feedback/`, `reports/`, `email/`, `admin/`,
+  plus `main.ts`. Imports only go downwards in that order (shared at the bottom), with no
+  cycles and no index files; `tests/structure.test.ts` enforces it. Tests mirror `src/`.
 - The HTML frontend in `web/` is deployed separately. Preserve its API contract.
-- No frameworks, dependency injection, classes-as-services or layered folders. Prefer a flat
-  set of feature modules (`reports.ts`, `feedback.ts`, ...), created when they are needed.
+- No frameworks, dependency injection, classes-as-services or layered folders (domain,
+  infrastructure, ...). Add a module to the feature folder it belongs to.
 
 ## Coding
 

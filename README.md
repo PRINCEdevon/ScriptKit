@@ -85,8 +85,9 @@ not changed behaviour.
 ## Project layout
 
 ```text
-src/         Apps Script source: one module per feature; main.ts lists the entrypoints.
-tests/       Vitest tests; support/ holds the fake Apps Script services.
+src/         Apps Script source in feature folders; main.ts lists the entrypoints.
+tests/       Vitest tests mirroring src/; support/ fakes Apps Script, baseline/ compares
+             the bundle with the original.
 scripts/     Build and Git hook scripts.
 legacy/      The original Code.gs, kept byte-for-byte as the behaviour reference.
 web/         The HTML report page, deployed separately from the backend.
@@ -96,14 +97,17 @@ dist/        Build output (generated, not committed).
 
 ### Modules
 
-| Module                                                                   | What it does                                                                  |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| `api.ts`                                                                 | The web app (`doGet`, `doPost`) and the team page view.                       |
-| `reports.ts`, `pipeline.ts`, `drive.ts`                                  | Submissions, validation, recording, corrections, the Report log, proof files. |
-| `feedback.ts`, `scoreboard.ts`                                           | Instant feedback rules and the cohort scoreboard.                             |
-| `email.ts`, `triggers.ts`                                                | Reminders, digests, replies, test mode and the time-driven triggers.          |
-| `admin.ts`, `page.ts`, `setup.ts`, `demo.ts`                             | The Sheet menu, report page preparation, setup and repair, demo data.         |
-| `sheets.ts`, `config.ts`, `dates.ts`, `teams.ts`, `utils.ts`, `types.ts` | Tabs, settings, dates and weeks, teams and links, shared helpers and types.   |
+`src/` has one folder per feature. Imports only go downwards through this table (a folder may
+use the ones above it, never below), which `tests/structure.test.ts` checks.
+
+| Folder      | Files                                                                | What it does                                                    |
+| ----------- | -------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `shared/`   | `sheets`, `settings`, `dates`, `teams`, `pipeline`, `utils`, `types` | Tabs by field name, settings, dates and weeks, teams and links. |
+| `feedback/` | `rules`, `scoreboard`                                                | Instant feedback after a report, and the cohort scoreboard.     |
+| `reports/`  | `web-app`, `reports`, `proof-files`                                  | The report page's backend: `doGet`, `doPost`, submissions.      |
+| `email/`    | `email`, `triggers`                                                  | Reminders, digests, replies, test mode, time-driven triggers.   |
+| `admin/`    | `menu`, `setup`, `demo`, `report-page`                               | The Sheet menu, setup and repair, demo data, the report page.   |
+| `main.ts`   |                                                                      | Exports every Apps Script entrypoint.                           |
 
 ## Git hooks
 
@@ -111,8 +115,9 @@ dist/        Build output (generated, not committed).
 run `pnpm exec lefthook install`.
 
 - **pre-commit**: ESLint and a Prettier check on staged files.
-- **commit-msg**: the subject must follow [Conventional Commits](https://www.conventionalcommits.org),
-  for example `feat: add reminders` or `fix(email): skip empty recipients`.
+- **commit-msg**: the subject must follow [Conventional
+  Commits](https://www.conventionalcommits.org), for example `feat: add reminders` or
+  `fix(email): skip empty recipients`.
 - **pre-push**: `pnpm check`.
 
 CI runs the same checks on every pull request and on pushes to `main`.
