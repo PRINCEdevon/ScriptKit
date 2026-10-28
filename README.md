@@ -1,174 +1,191 @@
+<div align="center">
+
 # ScriptKit
 
-ScriptKit is a small TypeScript development environment for Google Apps Script applications.
-It gives an Apps Script project the workflow of an ordinary JavaScript repository: typed
-modules, a bundler, linting, formatting, unit tests, Git hooks and CI. It does not add a
-framework or wrap Google's services; application code still calls `SpreadsheetApp`,
-`DriveApp` and `MailApp` directly.
+**A small, modern TypeScript workflow for Google Apps Script apps.**
 
-The first application is the **Revenue Accelerator Monday report**, migrated from one large
-legacy file into typed modules over seven pull requests.
+Typed modules, a real bundler, tests that run in seconds without a Google account,
+Git hooks and CI, while the app still calls `SpreadsheetApp`, `DriveApp` and `MailApp`
+directly. No framework, no wrappers.
 
-> **Current status: migrated, not yet live.** The whole application is typed modules in
-> `src/`, built into one bundle with the same 21 entrypoints as the original. The original,
-> `legacy/Code.gs`, stays as the behaviour reference the tests compare against. The live Sheets
-> keep running the pasted original until the bundle is deployed: see the go-live checklist in
-> [docs/migration-plan.md](docs/migration-plan.md#going-live).
+[![CI](https://github.com/PRINCEdevon/ScriptKit/actions/workflows/ci.yml/badge.svg)](https://github.com/PRINCEdevon/ScriptKit/actions/workflows/ci.yml)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
+![Apps Script](https://img.shields.io/badge/Apps%20Script-V8-4285f4?logo=google&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-24%2B-5fa04e?logo=nodedotjs&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-12-f69220?logo=pnpm&logoColor=white)
+![Vitest](https://img.shields.io/badge/tested%20with-Vitest-6e9f18?logo=vitest&logoColor=white)
 
-## The Revenue Accelerator
+[Quick start](#quick-start) · [How it works](#how-it-works) · [Project structure](#project-structure) · [Testing](#testing) · [Deploying](#deploying) · [Docs](#documentation)
 
-Teams in an accelerator programme fill in a short report every Monday: money received, how
-many people they asked to buy, what customers said, their goals and (for the Organisation
-track) their sales pipeline. The application:
+</div>
 
-- serves each team's report page through a private link and stores the reports in a Sheet;
-- shows instant feedback, the team's history and a cohort scoreboard after each report;
-- emails reminders, mentor digests and the programme manager's replies;
-- gives the programme manager a menu in the Sheet for links, replies, setup and demo data.
+---
 
-One copy runs per programme. Everything that differs between programmes lives in the Sheet's
-Settings tab, not in code.
+## What's inside
 
-## How it fits together
+ScriptKit's first application is the **Revenue Accelerator Monday report**. Teams in an
+accelerator programme send a short report every Monday: money received, how many people they
+asked to buy, what customers said, their goals and, on the Organisation track, their sales
+pipeline.
 
-| Piece                             | Role                                                                                          |
-| --------------------------------- | --------------------------------------------------------------------------------------------- |
-| Google Apps Script                | The backend. Server-side JavaScript (V8) that runs in Google's cloud, bound to one Sheet.     |
-| Google Sheets                     | The database and the admin interface. Each tab is a table; the header row names the columns.  |
-| Google Drive                      | Stores proof-of-payment uploads and the report page template.                                 |
-| MailApp                           | Sends reminders, digests, replies and link emails from the script owner's account.            |
-| Time-driven triggers              | Run scheduled jobs (reminders, digests, the daily log refresh).                               |
-| Settings tab                      | Programme configuration: name, time zone, currency, email switches, test mode.                |
-| [HTML report page](web/README.md) | Hosted separately on the programme's website; talks to the script's web app URL with `fetch`. |
+- 📝 **A report page per team.** Each team has a private link; reports land in the programme's
+  Google Sheet.
+- 💡 **Instant feedback.** After each report: notes driven by editable rules, the team's
+  history, and a cohort scoreboard.
+- ✉️ **Email that runs itself.** Due-day reminders, Tuesday digests for mentors, and replies
+  from the programme manager, with a test mode that sends everything to one inbox.
+- 🧰 **An admin menu in the Sheet.** Team links, replies, setup and repair, demo data and a
+  permissions check.
 
-A few things about Apps Script that shape this repository:
+One copy runs per programme. Everything that differs between programmes (name, time zone,
+currency, email switches) lives in the Sheet's Settings tab, not in code.
 
-- **There are no modules at runtime.** Every file in a script project shares one global
-  scope. Apps Script finds `doGet`, `doPost`, `onOpen`, menu handlers and trigger handlers by
-  looking for top-level functions with those names.
+> [!NOTE]
+> **Status: migrated, not yet live.** The app was moved from one 1,425-line `Code.gs` into
+> typed modules without changing behaviour, and the original is kept in `legacy/` as the
+> reference the tests compare against. Live programmes still run the original until the
+> [go-live checklist](docs/migration-plan.md#going-live) is complete.
+
+## How it works
+
+```mermaid
+flowchart LR
+    page["📄 Report page<br/>web/, hosted on the programme's site"]
+    subgraph gas["Google Apps Script · dist/Code.js"]
+        webapp["Web app<br/>doGet · doPost"]
+        menu["Sheet menu<br/>onOpen · menu items"]
+        jobs["Time-driven triggers<br/>reminders · digests · daily log"]
+    end
+    sheet[("Google Sheet<br/>Settings · Teams · Reports · …")]
+    drive[("Google Drive<br/>proof of payment")]
+    mail["MailApp"]
+
+    page -- "fetch: GET / POST" --> webapp
+    webapp --> sheet
+    webapp --> drive
+    menu --> sheet
+    jobs --> sheet
+    menu --> mail
+    jobs --> mail
+```
+
+Three things about Apps Script shape this repository:
+
+- **There are no modules at runtime.** Every file in a script project shares one global scope,
+  and Apps Script finds `doGet`, `doPost`, `onOpen`, menu handlers and triggers by looking for
+  top-level functions with those names.
 - **The build bridges the gap.** `scripts/build.js` bundles `src/` with esbuild into one
-  script, `dist/Code.js`, and adds a top-level function for each export of `src/main.ts`.
-  Exporting a function from `src/main.ts` is how you make it an entrypoint.
-- **Google services are globals** (`SpreadsheetApp`, `DriveApp`, ...). Types come from
-  `@types/google-apps-script`. Code in `src/` is type-checked without Node.js types, because
-  Node APIs do not exist in Apps Script.
+  script and adds a top-level function for each export of `src/main.ts`. Exporting a function
+  from `main.ts` is how it becomes an entrypoint.
+- **Google services are globals.** Types come from `@types/google-apps-script`, and `src/` is
+  type-checked without Node.js types, because Node APIs do not exist in Apps Script.
 
-## Getting started
+## Quick start
 
-Requirements: Node.js 24 LTS or newer, and pnpm (the version is pinned in `package.json`).
+You need **Node.js 24 or newer** and **pnpm** (the exact version is pinned in `package.json`).
 
 ```bash
-pnpm install   # installs dependencies and the Git hooks
-pnpm check     # typecheck, lint, format check, tests and build
+git clone https://github.com/PRINCEdevon/ScriptKit.git
+cd ScriptKit
+pnpm install   # dependencies and Git hooks
+pnpm check     # typecheck, lint, format check, tests and build: what CI runs
 ```
 
-| Command             | What it does                                                  |
-| ------------------- | ------------------------------------------------------------- |
-| `pnpm build`        | Bundle `src/` into `dist/Code.js` and copy `appsscript.json`. |
-| `pnpm dev`          | Rebuild whenever `src/` or `appsscript.json` changes.         |
-| `pnpm typecheck`    | TypeScript checks for `src/` and for the Node.js tooling.     |
-| `pnpm lint`         | ESLint.                                                       |
-| `pnpm format`       | Format with Prettier.                                         |
-| `pnpm format:check` | Check formatting without changing files.                      |
-| `pnpm test`         | Run the Vitest suite once.                                    |
-| `pnpm test:watch`   | Run Vitest in watch mode.                                     |
-| `pnpm check`        | Everything CI runs, in the same order.                        |
-| `pnpm clasp:push`   | Check, build and upload `dist/` with clasp (see below).       |
+| Command           | What it does                                                              |
+| ----------------- | ------------------------------------------------------------------------- |
+| `pnpm build`      | Bundle `src/` into `dist/Code.js` and copy `appsscript.json`.             |
+| `pnpm dev`        | Rebuild on every change to `src/` or `appsscript.json`.                   |
+| `pnpm test`       | Run the test suite once (`pnpm test:watch` to keep it running).           |
+| `pnpm typecheck`  | TypeScript, for `src/` and for the Node.js tooling.                       |
+| `pnpm lint`       | ESLint.                                                                   |
+| `pnpm format`     | Format with Prettier (`pnpm format:check` to only check).                 |
+| `pnpm check`      | All of the above, in CI's order.                                          |
+| `pnpm clasp:push` | Check, build and upload `dist/` to Apps Script ([Deploying](#deploying)). |
 
-Tests run in Node.js with no Google credentials and never call real Google services.
-`tests/support/` has in-memory fakes of the services the application uses and runs a script
-the way Apps Script does, with a fresh global scope for every call. The baseline tests in
-`tests/baseline/` run the same scenarios against the original `legacy/Code.gs` and against
-the bundle, and require identical results: that is how each refactoring step proves it has
-not changed behaviour.
-
-## Project layout
+## Project structure
 
 ```text
-src/         Apps Script source in feature folders; main.ts lists the entrypoints.
-tests/       Vitest tests mirroring src/; support/ fakes Apps Script, baseline/ compares
-             the bundle with the original.
-scripts/     Build and Git hook scripts.
-legacy/      The original Code.gs, kept byte-for-byte as the behaviour reference.
-web/         The HTML report page, deployed separately from the backend.
-docs/        Migration plan and go-live checklist, legacy map, known issues.
-dist/        Build output (generated, not committed).
+src/                 Apps Script source, one folder per feature
+├── main.ts          every entrypoint Apps Script can call
+├── shared/          sheets, settings, dates, teams, pipeline, utils, types
+├── feedback/        feedback rules and the cohort scoreboard
+├── reports/         web app (doGet, doPost), submissions, proof files
+├── email/           reminders, digests, replies, triggers
+└── admin/           Sheet menu, setup and repair, demo data, report page
+tests/               mirrors src/, plus support/ (fake Google services) and baseline/
+legacy/Code.gs       the original application, kept byte-for-byte
+web/                 the report page, deployed separately
+scripts/             build and Git hook scripts
+docs/                migration plan, legacy map, known issues
 ```
 
-### Modules
+Folders only import **downwards** (`shared` ← `feedback` ← `reports` ← `email` ← `admin` ←
+`main`), with no cycles and no index files. `tests/structure.test.ts` keeps it that way.
 
-`src/` has one folder per feature. Imports only go downwards through this table (a folder may
-use the ones above it, never below), which `tests/structure.test.ts` checks.
+## Testing
 
-| Folder      | Files                                                                | What it does                                                    |
-| ----------- | -------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `shared/`   | `sheets`, `settings`, `dates`, `teams`, `pipeline`, `utils`, `types` | Tabs by field name, settings, dates and weeks, teams and links. |
-| `feedback/` | `rules`, `scoreboard`                                                | Instant feedback after a report, and the cohort scoreboard.     |
-| `reports/`  | `web-app`, `reports`, `proof-files`                                  | The report page's backend: `doGet`, `doPost`, submissions.      |
-| `email/`    | `email`, `triggers`                                                  | Reminders, digests, replies, test mode, time-driven triggers.   |
-| `admin/`    | `menu`, `setup`, `demo`, `report-page`                               | The Sheet menu, setup and repair, demo data, the report page.   |
-| `main.ts`   |                                                                      | Exports every Apps Script entrypoint.                           |
+Tests run in Node.js with **no Google account and no network**. Nothing can send a real email
+or touch a real Sheet.
 
-## Git hooks
+- **Fake Google services.** `tests/support/` has in-memory fakes of SpreadsheetApp, DriveApp,
+  MailApp, ScriptApp and friends. Each fake throws on anything it does not implement, so a
+  gap can't pass silently.
+- **Compared with the original.** Most tests run the same inputs through the typed code and
+  through `legacy/Code.gs`, loaded into a `node:vm` sandbox, and require identical results:
+  return values, errors, every cell, every email and every Drive file.
+- **Whole-app baselines.** `tests/baseline/` runs full scenarios against the built bundle the
+  way Apps Script runs it, with a fresh global scope for every call.
 
-[Lefthook](https://lefthook.dev) installs the hooks during `pnpm install`. To reinstall them,
-run `pnpm exec lefthook install`.
+## Deploying
 
-- **pre-commit**: ESLint and a Prettier check on staged files.
-- **commit-msg**: the subject must follow [Conventional
-  Commits](https://www.conventionalcommits.org), for example `feat: add reminders` or
-  `fix(email): skip empty recipients`.
-- **pre-push**: `pnpm check`.
+[clasp](https://github.com/google/clasp) uploads `dist/` to an Apps Script project. Two steps
+matter, and they are easy to confuse:
 
-CI runs the same checks on every pull request and on pushes to `main`.
+| Step                          | What changes                                                                                  |
+| ----------------------------- | --------------------------------------------------------------------------------------------- |
+| `pnpm clasp:push`             | Replaces **all** code in the script project. The Sheet's menu and triggers use it right away. |
+| Update the web app deployment | The report page's `/exec` address serves a fixed version until you point it at a new one.     |
 
-## Deployment with clasp
+<details>
+<summary><strong>First-time setup and details</strong></summary>
 
-[clasp](https://github.com/google/clasp) uploads local files to an Apps Script project. Two
-steps matter, and they are easy to confuse:
+1. Copy `.clasp.json.example` to `.clasp.json` (ignored by Git) and set the script ID of a
+   **staging** project bound to a copy of the Sheet.
+2. Log in with `pnpm exec clasp login`. The token lives in `~/.clasprc.json`, outside the
+   repository.
+3. Compare the project's manifest with `appsscript.json` before the first push, for example by
+   running `pnpm exec clasp clone <scriptId>` in an empty folder.
+4. Run `pnpm clasp:push`. clasp asks before it overwrites the project's manifest; in a
+   non-interactive shell it skips the push instead, so use `pnpm clasp:push -f` once you have
+   compared the manifests.
+5. Update the web app deployment: run `pnpm exec clasp update-deployment <deploymentId>`, or
+   use Deploy › Manage deployments › Edit › New version in the editor.
 
-1. **`clasp push` uploads code.** It replaces _every_ file in the script project with the
-   contents of `dist/` (set by `rootDir` in `.clasp.json`). The Sheet's menu, the triggers
-   and the editor's test deployment run this uploaded code **immediately**.
-2. **A deployment publishes a version.** The web app URL that the report page calls (the one
-   ending in `/exec`) serves a fixed, numbered version. It only changes when the deployment
-   is pointed at a new version: `clasp update-deployment <deploymentId>` snapshots the pushed
-   code as a new version and switches the deployment to it (or use Deploy > Manage
-   deployments > Edit > New version in the editor).
+Switching a live programme to the bundle has its own checklist:
+[Going live](docs/migration-plan.md#going-live).
 
-So a push changes the Sheet's behaviour straight away, while the report page keeps using the
-previously deployed version until the deployment is updated.
+</details>
 
-To link a checkout to a script project, copy `.clasp.json.example` to `.clasp.json` (ignored
-by Git) and fill in the script ID. Log in with `pnpm exec clasp login`; the token is stored
-in `~/.clasprc.json`, outside the repository.
+## The report page
 
-`pnpm clasp:push` runs `pnpm check` and then `clasp push`, uploading `dist/` to whichever
-project `.clasp.json` names. Nothing runs it automatically. The flow is:
+The page in [`web/`](web/) is plain HTML, CSS and JavaScript. It is uploaded to the programme's
+website separately from the backend and talks to the web app with `fetch`.
+[web/README.md](web/README.md) describes the API contract it depends on.
 
-1. Point `.clasp.json` at a **staging** script project bound to a copy of the Sheet, and run
-   `pnpm clasp:push`.
-2. In the staging Sheet, reload and run "Check permissions"; then update the staging web app
-   deployment and work through the manual test script.
-3. Only then point `.clasp.json` at production, push, and update the production deployment.
+## Documentation
 
-Before the first push to any project, compare the project's own manifest with
-`appsscript.json` (for example `pnpm exec clasp clone <scriptId>` into an empty scratch
-folder). The repository's manifest was reconstructed from the deployment settings in use: V8,
-execute as the deploying user, anyone can access, and no `oauthScopes`, so Apps Script detects
-the scopes from the code. `clasp push` asks before it overwrites the project's manifest (the
-script deliberately does not pass `-f`), so you can still say no. Without an interactive
-terminal (an agent or a script) it cannot ask, and prints "Skipping push." instead; there, once
-you have compared the manifests, run `pnpm clasp:push -f`.
-
-## Frontend
-
-The report page in `web/` is plain HTML, CSS and JavaScript. It is uploaded to the
-programme's website separately from the backend and calls the web app URL. See
-[web/README.md](web/README.md) for the API contract it depends on.
+| Document                                         | What's in it                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------------- |
+| [CONTRIBUTING.md](CONTRIBUTING.md)               | Setting up, branches and commits, code and test guidelines.       |
+| [AGENTS.md](AGENTS.md)                           | The rules for coding agents working in this repository.           |
+| [docs/migration-plan.md](docs/migration-plan.md) | How the migration was done, and the go-live checklist.            |
+| [docs/legacy-map.md](docs/legacy-map.md)         | Where each function of the original `Code.gs` lives now.          |
+| [docs/known-issues.md](docs/known-issues.md)     | Behaviour kept from the original that is worth fixing, and fixes. |
+| [web/README.md](web/README.md)                   | The report page and its API contract.                             |
+| [SECURITY.md](SECURITY.md)                       | What is sensitive here and how to report a vulnerability.         |
 
 ## Contributing
 
-Work happens on short-lived branches, with Conventional Commits and a pull request into
-`main`. Read [AGENTS.md](AGENTS.md) for the project rules, and
-[docs/known-issues.md](docs/known-issues.md) before changing behaviour.
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), and please follow
+the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security problem, see
+[SECURITY.md](SECURITY.md) rather than opening an issue.
