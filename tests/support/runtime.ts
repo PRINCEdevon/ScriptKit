@@ -58,7 +58,8 @@ function fixedClock(now: number): string {
 
 /** Round-trips through JSON: dates become ISO strings and values from the script's realm become plain data. */
 export function json<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+  // JSON.stringify(undefined) is undefined, which JSON.parse cannot read.
+  return value === undefined ? value : (JSON.parse(JSON.stringify(value)) as T);
 }
 
 /** A tab of the fake spreadsheet, edited by column heading the way a person would edit it. */
