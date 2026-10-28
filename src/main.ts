@@ -6,8 +6,7 @@
  * trigger handlers by name, so they must all be exported from here, under their legacy names:
  * the Sheet's menu and installed triggers refer to them by those names.
  *
- * During the migration they come from src/legacy.js; as each one moves into a typed module,
- * its export here moves with it.
+ * Each module's entrypoints keep the names the original legacy/Code.gs gave them.
  */
 // Web app (the report page).
 export { doGet, doPost } from './api.js';

@@ -64,15 +64,6 @@ describe('settings', () => {
     expect(settings().short_name).toBe('THREE');
   });
 
-  it('lets legacy code clear the cache by assigning the global, as setup does', () => {
-    const google = useFakeGoogle();
-    const sheet = seedTab(google, 'settings', [{ key: 'short_name', value: 'ONE' }]);
-    settings();
-    sheet.getRange(2, 2).setValue('TWO');
-    new Function('"use strict"; SETTINGS_CACHE_ = null;')();
-    expect(settings().short_name).toBe('TWO');
-  });
-
   it('adds a setting the tab lacks, and clears the cache when a row is appended to it', () => {
     const google = useFakeGoogle();
     seedTab(google, 'settings', [{ key: 'short_name', value: 'ONE' }]);

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { clearSettingsCache } from '../src/config.js';
 import { TABS } from '../src/sheets.js';
 import { DEFAULT_WEEKS, OLD_DEFAULTS, OLD_RULE_TEXT, setup } from '../src/setup.js';
 import type { Cell } from '../src/types.js';
@@ -22,7 +23,7 @@ function compareSetup(prepare: (google: FakeGoogle) => void, runs = 1) {
   prepare(original);
   let result: ReturnType<typeof outcome> = { value: undefined };
   for (let i = 0; i < runs; i++) {
-    globalThis.SETTINGS_CACHE_ = null; // each menu click is a fresh run
+    clearSettingsCache(); // each menu click is a fresh run
     result = outcome(setup);
     expect(result, `run ${i + 1}`).toEqual(outcome(() => loadLegacy(original, NOW).call('setup')));
     expect(stateOf(typed), `run ${i + 1}`).toEqual(stateOf(original));

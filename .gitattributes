@@ -1,4 +1,3 @@
 # Preserved byte-for-byte: never normalise line endings.
 legacy/** -text
-src/legacy.js -text
 web/report-template.html -text
