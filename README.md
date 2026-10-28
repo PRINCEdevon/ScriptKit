@@ -57,15 +57,15 @@ time zone, currency and email switches, lives in the Sheet's Settings tab rather
 
 ```mermaid
 flowchart LR
-    page["<b>Report page</b><br/><i>programme website</i>"]
+    page["<b>Report page</b><br/><i>“the frontend”</i>"]
     subgraph gas["Google Apps Script"]
-        webapp["<b>Web app</b><br/><i>doGet · doPost</i>"]
-        menu["<b>Sheet menu</b><br/><i>onOpen · menu items</i>"]
-        jobs["<b>Triggers</b><br/><i>reminders · digests</i>"]
+        webapp["<b>Web app</b><br/><i>“the API”</i>"]
+        menu["<b>Sheet menu</b><br/><i>“the admin panel”</i>"]
+        jobs["<b>Triggers</b><br/><i>“the cron jobs”</i>"]
     end
-    sheet[("<b>Google Sheet</b><br/><i>the database</i>")]
-    drive[("<b>Google Drive</b><br/><i>proof of payment</i>")]
-    mail["<b>Email</b><br/><i>MailApp</i>"]
+    sheet[("<b>Google Sheet</b><br/><i>“the database”</i>")]
+    drive[("<b>Google Drive</b><br/><i>“the S3 bucket”</i>")]
+    mail["<b>Email</b><br/><i>“the mail server”</i>"]
 
     page -- "GET / POST" --> webapp
     webapp --> sheet
