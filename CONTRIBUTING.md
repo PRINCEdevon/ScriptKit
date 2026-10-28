@@ -6,6 +6,8 @@ same rules more tersely.
 
 By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
+<br/>
+
 ## Contents
 
 1. [Prerequisites](#prerequisites)
@@ -17,6 +19,8 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 7. [Reporting problems](#reporting-problems)
 8. [Trying changes on Google](#trying-changes-on-google)
 
+<br/>
+
 ## Prerequisites
 
 - **Node.js 24 or newer**, the LTS version CI uses.
@@ -26,6 +30,8 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 That's all you need to develop and test: the tests use in-memory fakes of the Google services,
 so **no Google account is needed**. You only need one to try a build in a real Apps Script
 project (see [Trying changes on Google](#trying-changes-on-google)).
+
+<br/>
 
 ## Quick start
 
@@ -56,6 +62,8 @@ If `pnpm check` passes, you're ready. These are the commands you'll use:
 - **commit-msg**: the subject line must follow Conventional Commits (below).
 - **pre-push**: `pnpm check`.
 
+<br/>
+
 ## Making changes
 
 1. **Start from the latest `main`** on a short branch named after the kind of change:
@@ -69,6 +77,8 @@ If `pnpm check` passes, you're ready. These are the commands you'll use:
    the hooks.
 5. **Open a pull request** into `main` and fill in the template: a summary, what was added and
    changed, how it was tested, and anything not yet verified on Google.
+
+<br/>
 
 ## Code guidelines
 
@@ -87,6 +97,8 @@ If `pnpm check` passes, you're ready. These are the commands you'll use:
 - **Comments explain why** (a business rule, an Apps Script quirk), not what the code does.
 - **Never edit `legacy/Code.gs`.** It is the original application; a test checks its hash.
 
+<br/>
+
 ## Automated testing
 
 - **Every change comes with tests.** Run one file with
@@ -101,6 +113,8 @@ If `pnpm check` passes, you're ready. These are the commands you'll use:
 - **Whole-app baselines** in `tests/baseline/` run full scenarios against the built bundle.
   They should keep passing unchanged.
 
+<br/>
+
 ## Fixing known issues
 
 [docs/known-issues.md](docs/known-issues.md) lists behaviour kept from the original that is
@@ -108,11 +122,15 @@ worth fixing. Fix one issue per `fix:` pull request, with a test, and move its e
 "Fixed" section. [docs/legacy-map.md](docs/legacy-map.md) shows where each original function
 lives now.
 
+<br/>
+
 ## Reporting problems
 
 - **Bugs and ideas:** open a GitHub issue with what you did, what you expected and what
   happened. Never paste real team codes, email addresses or Sheet exports.
 - **Security problems:** please don't open an issue; follow [SECURITY.md](SECURITY.md).
+
+<br/>
 
 ## Trying changes on Google
 
