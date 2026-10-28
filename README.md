@@ -143,8 +143,10 @@ flowchart LR
 <!-- -------------------------------------------------------------------------- -->
 
 <details>
-  <summary><strong>Features</strong></summary>
+  <summary><strong>Features & Project Structure</strong></summary>
   <br/>
+
+#### Features
 
 - **Private team links** <br/>
   Each team reports through its own link: no accounts or passwords to manage.
@@ -188,15 +190,9 @@ flowchart LR
   Typed code, tests that compare every change with the original app, CI on every pull request,
   and clear rules for AI coding agents.
 
-</details>
+<br/>
 
----
-
-<!-- -------------------------------------------------------------------------- -->
-
-<details>
-  <summary><strong>Project Structure</strong></summary>
-  <br/>
+#### Project Structure
 
 ```text
 src/                 Apps Script source, one folder per feature
