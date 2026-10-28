@@ -117,6 +117,11 @@ const EXTRACTED: string[] = [
   'menuEmailsOff',
   'removeTriggers_',
   'autoDaily',
+  // PR 7: src/page.ts
+  'menuPreparePage',
+  'uploadSteps_',
+  'preparePage_',
+  'htmlEscape_',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

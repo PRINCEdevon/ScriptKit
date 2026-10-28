@@ -159,34 +159,7 @@ export class App {
 
   /** Everything the script can change, as plain data. */
   snapshot() {
-    const { spreadsheet, drive } = this.google;
-    return json({
-      sheets: spreadsheet.getSheets().map((sheet) => ({
-        name: sheet.getName(),
-        values: sheet.getDataRange().getValues(),
-        frozenRows: sheet.frozenRows,
-        hiddenColumns: sheet.hiddenColumns,
-        filter: sheet.filter?.criteria ?? null,
-      })),
-      activeSheet: spreadsheet.activeSheet?.getName() ?? null,
-      timeZone: spreadsheet.timeZone,
-      scriptProperties: Object.fromEntries(this.google.scriptProperties),
-      folders: drive.folders.map((folder) => folder.path()),
-      files: drive.files
-        .filter((file) => file.blob)
-        .map((file) => ({
-          path: `${file.parent.path()}/${file.name}`,
-          contentType: file.blob?.contentType,
-          text: file.blob?.getDataAsString(),
-          trashed: file.trashed,
-        })),
-      mail: this.google.mail,
-      triggers: this.google.triggers.map((trigger) => trigger.spec),
-      menus: this.google.ui.menus,
-      dialogs: this.google.ui.dialogs,
-      toasts: this.google.toasts,
-      logs: this.google.logs,
-    });
+    return stateOf(this.google);
   }
 }
 
@@ -241,4 +214,36 @@ export function outcome(fn: () => unknown): { value: unknown } | { error: string
   } catch (error) {
     return { error: String((error as Error).message) };
   }
+}
+
+/** Everything a script can change in a set of fakes, as plain data. */
+export function stateOf(google: FakeGoogle) {
+  const { spreadsheet, drive } = google;
+  return json({
+    sheets: spreadsheet.getSheets().map((sheet) => ({
+      name: sheet.getName(),
+      values: sheet.getDataRange().getValues(),
+      frozenRows: sheet.frozenRows,
+      hiddenColumns: sheet.hiddenColumns,
+      filter: sheet.filter?.criteria ?? null,
+    })),
+    activeSheet: spreadsheet.activeSheet?.getName() ?? null,
+    timeZone: spreadsheet.timeZone,
+    scriptProperties: Object.fromEntries(google.scriptProperties),
+    folders: drive.folders.map((folder) => folder.path()),
+    files: drive.files
+      .filter((file) => file.blob)
+      .map((file) => ({
+        path: `${file.parent.path()}/${file.name}`,
+        contentType: file.blob?.contentType,
+        text: file.blob?.getDataAsString(),
+        trashed: file.trashed,
+      })),
+    mail: google.mail,
+    triggers: google.triggers.map((trigger) => trigger.spec),
+    menus: google.ui.menus,
+    dialogs: google.ui.dialogs,
+    toasts: google.toasts,
+    logs: google.logs,
+  });
 }

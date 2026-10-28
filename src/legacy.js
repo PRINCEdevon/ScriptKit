@@ -39,6 +39,10 @@ import {
   DEFAULT_RULES,
 } from './feedback.js';
 import {
+  menuPreparePage,
+  uploadSteps as uploadSteps_,
+} from './page.js';
+import {
   LOG_TAB,
   recordReport as recordReport_,
   refreshReportLog as refreshReportLog_,
@@ -106,65 +110,6 @@ var OLD_RULE_TEXT = {
   checkpoint_org_ok: { detail: ["You already have an organisation that has signed or paid. Keep the signed letter or proof of payment ready."] },
   cohort_org: { lead: ["The middle Organisation-track team moved {median_moved} organisations forward this week."] }
 };
-
-/* ============================== Preparing the report page ============================== */
-
-function menuPreparePage() {
-  var ui = SpreadsheetApp.getUi();
-  var saved = String(settings_().web_app_url || '').trim();
-  var res = ui.prompt('Prepare the report page',
-    'Paste the web app address from the Deploy screen. It starts with https://script.google.com/ and ends with /exec.' +
-    (saved ? '\n\nOr leave this empty to use the address already saved in Settings:\n' + saved : ''),
-    ui.ButtonSet.OK_CANCEL);
-  if (res.getSelectedButton() !== ui.Button.OK) return;
-  var url = String(res.getResponseText() || '').trim() || saved;
-  if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(url)) {
-    ui.alert('That does not look like the web app address. It should start with https://script.google.com/ and end with /exec. Copy it again from Deploy > Manage deployments.');
-    return;
-  }
-  var out = preparePage_(url);
-  ui.alert('The report page is ready', out.name + ' is now in the same Drive folder as this Sheet, with your web app address already inside it.\n\n' + uploadSteps_(out.name), ui.ButtonSet.OK);
-}
-
-/** Says where to upload the page so that it sits at report_page_url. */
-function uploadSteps_(fileName) {
-  var url = String(settings_().report_page_url || '').trim();
-  var m = url.match(/^https?:\/\/([^\/]+)\/(.*)$/);
-  if (!m) return 'Upload it to your website so that it sits at ' + url + '.';
-  var host = m[1], path = m[2].replace(/\?.*$/, '');
-  if (!path || /\/$/.test(path)) {
-    var folder = path.replace(/\/$/, '');
-    return 'Upload it in File Manager: open ' + host + ' > public_html' + (folder ? ', create a folder called "' + folder + '" (once), open it,' : ',') +
-      ' upload ' + fileName + ' and rename it to index.html. It then opens at ' + url + '.';
-  }
-  return 'Upload it to ' + host + ' > public_html' + (path.indexOf('/') > 0 ? '/' + path.replace(/\/[^\/]*$/, '') : '') + ' so that it sits at ' + url + '.';
-}
-
-function preparePage_(url) {
-  var folder = parentFolder_();
-  var settings = settings_();
-  var templateName = pageTemplateName_(), pageName = pageName_();
-  var it = folder.getFilesByName(templateName);
-  if (!it.hasNext()) throw new Error('Could not find "' + templateName + '" in the same Drive folder as this Sheet. Its name must match the short_name in Settings.');
-  var html = it.next().getBlob().getDataAsString('UTF-8');
-  var placeholder = "'PASTE_YOUR_WEB_APP_URL_HERE'";
-  if (html.indexOf(placeholder) < 0) throw new Error('The page template has been changed: it no longer contains the place for the web app address.');
-  var programme = String(settings.programme_name || 'Mashauri Revenue Accelerator');
-  var fill = {
-    '__PAGE_TITLE__': reportName_() + ' · ' + programme,
-    '__PAGE_DESCRIPTION__': 'The weekly report page for teams in the ' + programme + '. It only opens with a team\'s private link.',
-    '__PROGRAMME_NAME__': programme
-  };
-  html = html.replace(placeholder, "'" + url + "'");
-  Object.keys(fill).forEach(function (k) { html = html.split(k).join(htmlEscape_(fill[k])); });
-  var old = folder.getFilesByName(pageName);
-  while (old.hasNext()) old.next().setTrashed(true);
-  folder.createFile(Utilities.newBlob(html, 'text/html', pageName));
-  setSetting_('web_app_url', url);
-  return { name: pageName };
-}
-
-function htmlEscape_(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
 /* ============================== Menu ============================== */
 
@@ -528,7 +473,6 @@ export {
   menuShowThisWeek,
   menuShowAll,
   menuRefreshLog,
-  menuPreparePage,
   menuCreateLinks,
   menuEmailLinks,
   menuAddDemo,

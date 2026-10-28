@@ -24,6 +24,9 @@ export {
 // Turning the automatic emails on and off, and the daily trigger.
 export { autoDaily, menuEmailsOff, menuEmailsOn } from './triggers.js';
 
+// Preparing the report page.
+export { menuPreparePage } from './page.js';
+
 export {
   // Simple trigger that builds the menu.
   onOpen,
@@ -33,7 +36,6 @@ export {
   menuShowThisWeek,
   menuShowAll,
   menuRefreshLog,
-  menuPreparePage,
   menuCreateLinks,
   menuEmailLinks,
   menuAddDemo,

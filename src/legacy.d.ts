@@ -1,5 +1,4 @@
 // Types for the entrypoints of src/legacy.js, the untyped transitional copy of legacy/Code.gs.
-// Each declaration disappears when its function moves into a typed module.
 
 // Simple trigger: builds the Revenue Accelerator menu when the Sheet opens.
 export function onOpen(e?: GoogleAppsScript.Events.SheetsOnOpen): void;
@@ -10,7 +9,6 @@ export function checkSetup(): string;
 export function menuShowThisWeek(): void;
 export function menuShowAll(): void;
 export function menuRefreshLog(): void;
-export function menuPreparePage(): void;
 export function menuCreateLinks(): void;
 export function menuEmailLinks(): void;
 export function menuAddDemo(): void;
