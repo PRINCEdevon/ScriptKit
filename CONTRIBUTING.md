@@ -7,6 +7,7 @@ same rules more tersely.
 By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 <br/>
+<br/>
 
 ## Contents
 
@@ -20,6 +21,7 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 8. [Trying changes on Google](#trying-changes-on-google)
 
 <br/>
+<br/>
 
 ## Prerequisites
 
@@ -31,6 +33,7 @@ That's all you need to develop and test: the tests use in-memory fakes of the Go
 so **no Google account is needed**. You only need one to try a build in a real Apps Script
 project (see [Trying changes on Google](#trying-changes-on-google)).
 
+<br/>
 <br/>
 
 ## Quick start
@@ -63,6 +66,7 @@ If `pnpm check` passes, you're ready. These are the commands you'll use:
 - **pre-push**: `pnpm check`.
 
 <br/>
+<br/>
 
 ## Making changes
 
@@ -78,6 +82,7 @@ If `pnpm check` passes, you're ready. These are the commands you'll use:
 5. **Open a pull request** into `main` and fill in the template: a summary, what was added and
    changed, how it was tested, and anything not yet verified on Google.
 
+<br/>
 <br/>
 
 ## Code guidelines
@@ -98,6 +103,7 @@ If `pnpm check` passes, you're ready. These are the commands you'll use:
 - **Never edit `legacy/Code.gs`.** It is the original application; a test checks its hash.
 
 <br/>
+<br/>
 
 ## Automated testing
 
@@ -114,45 +120,92 @@ If `pnpm check` passes, you're ready. These are the commands you'll use:
   They should keep passing unchanged.
 
 <br/>
+<br/>
 
 ## Fixing known issues
 
-[docs/known-issues.md](docs/known-issues.md) lists behaviour kept from the original that is
-worth fixing. Fix one issue per `fix:` pull request, with a test, and move its entry to the
-"Fixed" section. [docs/legacy-map.md](docs/legacy-map.md) shows where each original function
-lives now.
+[docs/known-issues.md](docs/known-issues.md) lists behaviour kept from the original app that is
+worth fixing. Each entry says where the code lives and how sure we are:
 
+- **Confirmed** <br/>
+  The code clearly behaves this way. These are ready to fix.
+- **Needs runtime test** <br/>
+  Plausible from the code, but it depends on how Google behaves. Reproduce it on a staging
+  project first (see below) and note what you saw in the issue.
+- **By design** <br/>
+  Intended behaviour with a trade-off. Open an issue to discuss it before changing anything.
+
+Fixes are paused at the moment, so please comment on, or open, an issue before starting one.
+Then:
+
+1. **Branch** from the latest `main` as `fix/<short-name>`, one issue per pull request.
+2. **Show the problem in a test first.** Many issues are already pinned by a test that records
+   today's behaviour; change it to expect the fixed behaviour and watch it fail.
+3. **Make the smallest change** that makes it pass. Most tests compare the typed code with the
+   original `legacy/Code.gs`; update only the comparisons your fix deliberately changes, and
+   explain each one in the pull request.
+4. **Move the entry** to the "Fixed" section of known-issues.md, saying what changed.
+5. **Note anything people will notice** (different emails, a changed page, new formatting in the
+   Sheet) in the pull request, and try it on Google if the change depends on the platform.
+
+The setup fix in [pull request #8](https://github.com/PRINCEdevon/ScriptKit/pull/8) is a good
+example to follow.
+
+<br/>
 <br/>
 
 ## Reporting problems
 
-- **Bugs and ideas:** open a GitHub issue with what you did, what you expected and what
-  happened. Never paste real team codes, email addresses or Sheet exports.
-- **Security problems:** please don't open an issue; follow [SECURITY.md](SECURITY.md).
+**Check [docs/known-issues.md](docs/known-issues.md) first:** your problem may already be
+described there, with the reason it hasn't been fixed yet.
 
+- **Bugs** <br/>
+  Open a GitHub issue with the steps you took, what you expected and what happened instead.
+  Say which part it was (the report page, the Sheet menu, an email, a scheduled job) and any
+  settings that matter, such as `time_zone`, `pretend_today` or whether `send_all_emails_to` is
+  set. For a script error, copy the message from **Executions** in the Apps Script editor.
+- **Ideas** <br/>
+  Describe the problem before the solution: who it affects and what they are trying to do.
+- **Questions** <br/>
+  Open an issue too; if the answer belongs in the docs, we'll add it.
+- **Security problems** <br/>
+  Please don't open an issue; follow [SECURITY.md](SECURITY.md) to report it privately.
+
+**Keep real data out of issues.** Never paste a team's private link or code, email addresses,
+the web app's `/exec` address or a spreadsheet export. Replace them with placeholders.
+
+<br/>
 <br/>
 
 ## Trying changes on Google
 
-Tests cover the code without Google, but some things only show up on the real platform. When a
-change needs that, try it on a **staging** project, never on a live programme's:
-
-1. Make a staging Sheet (a copy of a programme's Sheet, or a new one with "Add demo data"), open
-   **Extensions › Apps Script**, and note the **Script ID** under Project Settings.
-2. In the staging Sheet's Settings tab, set `send_all_emails_to`, `admin_email` and
-   `contact_email` to your own address, so every email comes to you.
-3. Push your build:
-
-   ```bash
-   cp .clasp.json.example .clasp.json   # set the staging scriptId
-   pnpm exec clasp login
-   pnpm clasp:push
-   ```
-
-4. Reload the Sheet and run **Set up or repair the sheet**. In Apps Script's Project Settings,
-   check that the `SHEET_ID` script property matches the ID in the staging Sheet's address
-   (a copied Sheet can still point at the original until setup runs).
-5. The menu now runs your code. To try the report page, also create or update a web app
-   deployment; the [README](README.md) explains the difference between pushing and deploying.
-
-Record what you checked in the pull request's Notes.
+> [!IMPORTANT]
+> **Use a staging project, never a live programme's** <br/>
+> The tests cover the code without Google, but some things only show up on the real platform:
+> permissions, triggers, emails and the web app. Try those changes in a staging Apps Script
+> project bound to a copy of the Sheet, with every email redirected to you, and record what
+> you checked in the pull request.
+>
+> <details>
+> <summary><strong>See more: step by step</strong></summary>
+> <br/>
+>
+> 1. **Make a staging Sheet** <br/>
+>    A copy of a programme's Sheet, or a new one filled with "Add demo data". Open
+>    **Extensions › Apps Script** and note the **Script ID** under Project Settings.
+> 2. **Redirect every email to yourself** <br/>
+>    In the staging Sheet's Settings tab, set `send_all_emails_to`, `admin_email` and
+>    `contact_email` to your own address.
+> 3. **Push your build** <br/>
+>    Copy `.clasp.json.example` to `.clasp.json`, set the staging script ID, then run
+>    `pnpm exec clasp login` and `pnpm clasp:push`.
+> 4. **Point the script at the right Sheet** <br/>
+>    Reload the Sheet and run **Set up or repair the sheet**. Then check that the `SHEET_ID`
+>    script property (Project Settings) matches the ID in the staging Sheet's address: a
+>    copied Sheet can still point at the original until setup runs.
+> 5. **Try the report page if you need to** <br/>
+>    The menu runs your code straight away, but the web app only changes when its deployment
+>    does. Create or update a web app deployment; the [README](README.md) explains the
+>    difference between pushing and deploying.
+>
+> </details>
