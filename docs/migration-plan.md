@@ -7,15 +7,18 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 
 ## Status
 
-| #   | Branch                           | Title                                               | Status                           |
-| --- | -------------------------------- | --------------------------------------------------- | -------------------------------- |
-| 1   | `chore/scaffold`                 | chore: initialize ScriptKit development environment | Merged                           |
-| 2   | `refactor/legacy-runtime`        | refactor: integrate legacy application into build   | Merged                           |
-| 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Merged                           |
-| 4   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Merged                           |
-| 5   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Merged                           |
-| 6   | `refactor/notifications`         | refactor: migrate email and scheduled jobs          | Merged                           |
-| 7   | `refactor/admin-and-integration` | refactor: complete administration and integration   | Ready for review (branch pushed) |
+| #   | Branch                           | Title                                               | Status |
+| --- | -------------------------------- | --------------------------------------------------- | ------ |
+| 1   | `chore/scaffold`                 | chore: initialize ScriptKit development environment | Merged |
+| 2   | `refactor/legacy-runtime`        | refactor: integrate legacy application into build   | Merged |
+| 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Merged |
+| 4   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Merged |
+| 5   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Merged |
+| 6   | `refactor/notifications`         | refactor: migrate email and scheduled jobs          | Merged |
+| 7   | `refactor/admin-and-integration` | refactor: complete administration and integration   | Merged |
+
+The migration is complete. Since then: PR 8 (`fix/setup-deleted-rows`) fixed setup after rows
+are deleted, and PR 9 (`refactor/feature-folders`) moved `src/` into feature folders.
 
 ## The steps
 
@@ -86,18 +89,19 @@ Sheet is suitable):
 loading a team's page, one submission and one correction. It has been deferred so far and must
 happen before the live project switches to the bundle.
 
-| Build | Where                                        | Checked                                                            | Not checked                                             |
-| ----- | -------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
-| PR 2  | A personal test project bound to a Sheet     | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                              |
-| PR 3  | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                              |
-| PR 4  | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`), which runs the scoreboard   |
-| PR 5  | Not pushed                                   | Nothing                                                            | Everything: the first build whose web app is typed code |
-| PR 6  | Not pushed                                   | Nothing                                                            | Everything                                              |
+| Build                         | Where                                        | Checked                                                            | Not checked                                             |
+| ----------------------------- | -------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
+| PR 2                          | A personal test project bound to a Sheet     | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                              |
+| PR 3                          | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                              |
+| PR 4                          | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`), which runs the scoreboard   |
+| PR 5                          | Not pushed                                   | Nothing                                                            | Everything: the first build whose web app is typed code |
+| PR 6                          | Not pushed                                   | Nothing                                                            | Everything                                              |
+| `main` after PR 9 (`829cdb3`) | The same test project (pushed and read back) | Pending: Sheet checks                                              | Pending: web app check                                  |
 
 ## Going live
 
-The test project has only ever run builds up to PR 4, and the web app has never run on Google.
-Before a live programme switches from the pasted `Code.gs` to the bundle:
+See the Record above for what has been checked so far. Before a live programme switches from
+the pasted `Code.gs` to the bundle:
 
 1. In the test project (`.clasp.json`), push the current `main` with `pnpm clasp:push` and
    repeat the Sheet checks: reload for the menu, "Set up or repair the sheet", "Check
@@ -122,7 +126,7 @@ Before a live programme switches from the pasted `Code.gs` to the bundle:
 ## After the migration
 
 Fix the issues in [known-issues.md](known-issues.md) in separate `fix:` PRs, each with a
-test. Most tests compare the typed code with `legacy/Code.gs`, so a fix that changes
+test. They are on hold for now (October 2026), apart from the setup fix already made. Most tests compare the typed code with `legacy/Code.gs`, so a fix that changes
 behaviour updates exactly the comparisons it changes and pins the new behaviour instead.
 
 ## Legacy entrypoints
