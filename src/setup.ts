@@ -149,7 +149,8 @@ export function setup(): void {
     fields.forEach((field) => {
       const column = table.col[field] as number;
       table.sheet.setColumnWidth(column, 280);
-      table.sheet.getRange(1, column, 1000, 1).setWrap(true);
+      // The whole column, however many rows the tab has now.
+      table.sheet.getRange(1, column, table.sheet.getMaxRows(), 1).setWrap(true);
     });
   });
   reports.sheet.getRange(1, reports.col.reply as number, 1, 3).setBackground('#fde8eb');
@@ -303,9 +304,15 @@ export function ensureTab(ss: Spreadsheet, def: TabDef): void {
   sheet.setFrozenRows(1);
 }
 
+/**
+ * A drop-down on every row below the header, however many rows the tab has. (A fixed 999 rows
+ * used to run past the end of a tab that had lost rows, for example after removing demo data.)
+ */
 function setValidationList(sheet: Sheet, column: number, list: string[]): void {
+  const rows = sheet.getMaxRows() - 1;
+  if (rows < 1) return; // only a header row
   sheet
-    .getRange(2, column, 999, 1)
+    .getRange(2, column, rows, 1)
     .setDataValidation(
       SpreadsheetApp.newDataValidation()
         .requireValueInList(list, true)

@@ -92,19 +92,6 @@ created by "Create missing team links" (T01, T02, ...) are text and are not affe
 the row after the last filled one, so two corrections arriving at the same moment could land
 on the same row, and one would be lost.
 
-## Setup
-
-### "Set up or repair the sheet" fails once rows have been deleted (Needs runtime test)
-
-`setup` formats a fixed block of rows on several tabs (`getRange(1, column, 1000, 1)` for text
-wrapping, `getRange(2, column, 999, 1)` for drop-downs). A new tab has exactly 1000 rows, and
-deleting rows makes a tab shorter, so once any rows have been deleted from such a tab the range
-runs past its end and setup stops with "The coordinates of the range are outside the
-dimensions of the sheet". "Remove demo data" deletes rows from the Teams tab, and setup's own
-tidying deletes repeated settings, so "Add demo data", "Remove demo data", then "Set up or
-repair the sheet" would fail. The fakes model Sheets this way and both the original and the
-typed code fail identically (`tests/setup.test.ts`); confirm it on Google.
-
 ## Access
 
 ### A team's link is its only credential (By design)
@@ -137,3 +124,13 @@ in a plain JavaScript object. Two lowercase names already exist on every such ob
 `constructor` and `__proto__`, so an organisation called "Constructor" (or `__proto__`) is
 reported as "listed twice" and the report cannot be sent. Unlikely with real names;
 `tests/reports.test.ts` pins the current behaviour.
+
+## Fixed
+
+### "Set up or repair the sheet" failed once rows had been deleted (fixed in `fix/setup-deleted-rows`)
+
+`setup` formatted a fixed 1000 rows (text wrapping) and 999 rows (drop-downs), which ran past
+the end of a tab that had lost rows, for example after "Remove demo data", and stopped with
+"The coordinates of the range are outside the dimensions of the sheet". It now formats whole
+columns, however many rows a tab has, so tabs longer than 1000 rows also get drop-downs on
+every row. A fresh 1000-row tab is formatted exactly as before. Pinned in `tests/setup.test.ts`.

@@ -59,8 +59,8 @@ describe('setup', () => {
 
   it('repairs an old, untidy Sheet exactly as the original does', () => {
     const state = compareSetup((google) => {
-      // More than 1000 rows, so that removing the repeated settings below does not trip the
-      // known issue about deleted rows (pinned in its own test).
+      // 1002 rows: removing the two repeated settings below leaves exactly 1000, where the
+      // original and the fixed setup format the same rows (see the next tests).
       const settingsTab = seedValues(google, 'Settings', [
         ['Setting', 'Value'],
         ['programme_name', 'Mashauri Revenue Accelerator'],
@@ -70,7 +70,7 @@ describe('setup', () => {
         ['currency_symbol', '₹'],
         ['currency_symbol', 'R'],
       ]);
-      settingsTab.maxRows = 1100;
+      settingsTab.maxRows = 1002;
       // Reports with an older heading and missing columns, and two real reports.
       const reports: Cell[][] = [
         ['Week', 'Team', 'Money received (R)', 'Send reply', 'Team ID'],
@@ -134,15 +134,48 @@ describe('setup', () => {
     ]);
   });
 
-  it('fails like the original once rows have been deleted from a 1000-row tab (docs/known-issues.md)', () => {
+  /** Runs the fixed setup and the original on twin fakes, where they are expected to differ. */
+  function setupAfter(prepare: (google: FakeGoogle) => void) {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(NOW));
+    const typed = useFakeGoogle();
+    const original = new FakeGoogle();
+    prepare(typed);
+    prepare(original);
+    return {
+      typed: { result: outcome(setup), formats: formatsOf(typed, 'Teams') },
+      original: { result: outcome(() => loadLegacy(original, NOW).call('setup')) },
+    };
+  }
+
+  const formatsOf = (google: FakeGoogle, tab: string) =>
+    google.spreadsheet.getSheetByName(tab)?.formats ?? [];
+
+  const teamsWithRows = (rows: number) => (google: FakeGoogle) => {
+    seedValues(google, 'Teams', [headings('teams'), ['T01', 'Alpha'], ['T02', 'Beta']]);
+    const teams = google.spreadsheet.getSheetByName('Teams');
+    if (teams) teams.maxRows = rows;
+  };
+
+  it('works once rows have been deleted from a tab, where the original failed', () => {
     // For example after "Remove demo data", which deletes rows from the Teams tab.
-    const { result } = compareSetup((google) => {
-      seedValues(google, 'Teams', [headings('teams'), ['T01', 'Alpha'], ['T02', 'Beta']]);
-      google.spreadsheet.getSheetByName('Teams')?.deleteRow(3);
-    });
-    expect(result).toEqual({
+    const run = setupAfter(teamsWithRows(993));
+    expect(run.original.result).toEqual({
       error: 'The coordinates of the range are outside the dimensions of the sheet.',
     });
+    expect(run.typed.result).toEqual({ value: undefined });
+    expect(run.typed.formats.filter((f) => f.startsWith('validation'))).toEqual([
+      'validation {"list":["Direct","Organisation"],"allowInvalid":false}: rows 2-993 of column 3',
+      'validation {"list":["Active","Stopped"],"allowInvalid":false}: rows 2-993 of column 4',
+    ]);
+  });
+
+  it('gives every row a drop-down on a tab that has grown past 1000 rows', () => {
+    const run = setupAfter(teamsWithRows(1500));
+    expect(run.typed.formats.filter((f) => f.startsWith('validation'))).toEqual([
+      'validation {"list":["Direct","Organisation"],"allowInvalid":false}: rows 2-1500 of column 3',
+      'validation {"list":["Active","Stopped"],"allowInvalid":false}: rows 2-1500 of column 4',
+    ]);
   });
 
   it('works on a Sheet whose blank first tab has been renamed or filled in', () => {
