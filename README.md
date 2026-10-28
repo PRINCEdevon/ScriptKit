@@ -2,11 +2,10 @@
 
 # ScriptKit
 
-**A small, modern TypeScript workflow for Google Apps Script apps.**
+**The Revenue Accelerator's weekly reporting system.**
 
-Typed modules, a real bundler, tests that run in seconds without a Google account,
-Git hooks and CI, while the app still calls `SpreadsheetApp`, `DriveApp` and `MailApp`
-directly. No framework, no wrappers.
+Teams report on schedule, get instant feedback, and keep their mentors in the loop,
+all running on Google Sheets and Apps Script.
 
 [![CI](https://github.com/PRINCEdevon/ScriptKit/actions/workflows/ci.yml/badge.svg)](https://github.com/PRINCEdevon/ScriptKit/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
@@ -25,20 +24,31 @@ directly. No framework, no wrappers.
 
 ---
 
-**ScriptKit gives a Google Apps Script app the workflow of an ordinary TypeScript repository.**
-<br/> Its first application is the **Revenue Accelerator Monday report**: teams in an
-accelerator programme send a short report every Monday (money received, how many people they
-asked to buy, what customers said, their goals and, on the Organisation track, their sales
-pipeline) and get instant feedback, while their mentors and the programme manager are kept up to
-date by email.
+**A simple reporting system for accelerator programmes.** <br/>
+Teams in an accelerator programme send a short report on scheduled days and get instant
+feedback, while their mentors and the programme manager are kept up to date by email.
+
+It runs entirely on tools the programme already has:
+
+- **Google Sheets** <br/>
+  The database and the admin screen: every tab is a table the programme manager can read.
+- **Google Apps Script** <br/>
+  The serverless backend: a web app for the report page, a menu inside the Sheet, and
+  time-driven triggers that run like cron jobs to send reminders and digests.
+- **A simple web page** <br/>
+  The report form is plain HTML, CSS and JavaScript, hosted on the programme's own website.
+- **This repository** <br/>
+  The development environment: typed code, tests that run without Google, CI, and
+  instructions for AI coding agents.
 
 One copy runs per programme. Everything that differs between programmes (name, time zone,
 currency, email switches) lives in the Sheet's Settings tab, not in code.
 
 > [!NOTE]
-> **Status: migrated, not yet live.** The app was moved from one 1,425-line `Code.gs` into
-> typed modules without changing behaviour, and the original is kept in `legacy/` as the
-> reference the tests compare against. Live programmes still run the original until the
+> **Status: migrated, not yet live** <br/>
+> The app was moved from one 1,425-line `Code.gs` into typed modules without changing
+> behaviour, and the original is kept in `legacy/` as the reference the tests compare against.
+> Live programmes still run the original until the
 > [go-live checklist](docs/migration-plan.md#going-live) is complete.
 
 <br/>
@@ -70,22 +80,26 @@ flowchart LR
     jobs --> mail
 ```
 
-Three things about Apps Script shape this repository:
-
-- **There are no modules at runtime.** Every file in a script project shares one global scope,
-  and Apps Script finds `doGet`, `doPost`, `onOpen`, menu handlers and triggers by looking for
-  top-level functions with those names.
-- **The build bridges the gap.** `scripts/build.js` bundles `src/` with esbuild into one
-  script and adds a top-level function for each export of `src/main.ts`. Exporting a function
-  from `main.ts` is how it becomes an entrypoint.
-- **Google services are globals.** Types come from `@types/google-apps-script`, and `src/` is
-  type-checked without Node.js types, because Node APIs do not exist in Apps Script.
+> [!TIP]
+> **Three things about Apps Script shape this repository** <br/>
+>
+> - **There are no modules at runtime** <br/>
+>   Every file in a script project shares one global scope, and Apps Script finds `doGet`,
+>   `doPost`, `onOpen`, menu handlers and triggers by looking for top-level functions with
+>   those names.
+> - **The build bridges the gap** <br/>
+>   `scripts/build.js` bundles `src/` with esbuild into one script and adds a top-level
+>   function for each export of `src/main.ts`. Exporting a function from `main.ts` is how it
+>   becomes an entrypoint.
+> - **Google services are globals** <br/>
+>   Types come from `@types/google-apps-script`, and `src/` is type-checked without Node.js
+>   types, because Node APIs do not exist in Apps Script.
 
 > [!IMPORTANT]
-> **The report page is deployed separately.** It lives in [`web/`](web/) as plain HTML, CSS and
-> JavaScript, is uploaded to the programme's website, and talks to the web app with `fetch`.
-> Changing the web app's requests or replies can break the live page:
-> [web/README.md](web/README.md) describes the contract it depends on.
+> **The report page is deployed separately** <br/>
+> It lives in [`web/`](web/) as plain HTML, CSS and JavaScript, is uploaded to the programme's
+> website, and talks to the web app with `fetch`. Changing the web app's requests or replies
+> can break the live page: [web/README.md](web/README.md) describes the contract it depends on.
 
 <br/>
 
@@ -95,22 +109,47 @@ Three things about Apps Script shape this repository:
   <summary><strong>Features</strong></summary>
   <br/>
 
-- **A report page per team** <br/>
-  Each team has a private link; reports land in the programme's Google Sheet.
+- **Private team links** <br/>
+  Each team reports through its own link: no accounts or passwords to manage.
+
+- **Reports straight into the Sheet** <br/>
+  Every report becomes a row in the programme's Google Sheet, checked as it is typed and again
+  when it arrives.
+
+- **Proof of payment** <br/>
+  Teams attach receipts and screenshots, filed in Google Drive in a folder per team.
 
 - **Instant feedback** <br/>
-  After each report: notes driven by editable rules, the team's history, and a cohort
-  scoreboard ranked by activity or by money.
+  Straight after sending, teams get tailored notes from rules the programme manager can reword,
+  reorder or switch off in the Sheet.
+
+- **Sales pipeline tracking** <br/>
+  Teams selling to organisations list their potential customers and stages; the app spots
+  progress, new leads and deals that have stalled.
+
+- **History and scoreboard** <br/>
+  Each team sees its past reports, replies and corrections, and a cohort scoreboard that ranks
+  by activity early on and by money from the checkpoint week.
 
 - **Email that runs itself** <br/>
-  Due-day reminders, Tuesday digests for mentors, and replies from the programme manager, with a
-  test mode that sends everything to one inbox.
+  Reminders on the due day, Tuesday digests for mentors and a summary for the programme
+  manager, all sent on schedule.
+
+- **Replies from the Sheet** <br/>
+  The programme manager types a reply next to a report and ticks a box; the team gets it by
+  email, copied to their mentor.
 
 - **An admin menu in the Sheet** <br/>
-  Team links, replies, setup and repair, demo data, and a permissions check.
+  Team links, this week's reports, the report log, setup and repair, demo data and a
+  permissions check, one click away.
 
-- **Tests without Google** <br/>
-  In-memory fakes of the Google services, and every change compared with the original app.
+- **Safe to try out** <br/>
+  A test mode sends every email to one inbox, a pretend date steps through the programme, and
+  demo data fills the Sheet in seconds.
+
+- **Built to last** <br/>
+  Typed code, tests that compare every change with the original app, CI on every pull request,
+  and clear rules for AI coding agents.
 
 </details>
 
