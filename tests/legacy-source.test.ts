@@ -135,6 +135,17 @@ const EXTRACTED: string[] = [
   'addDemo_',
   'menuRemoveDemo',
   'removeDemo_',
+  // PR 7: src/setup.ts
+  'setup',
+  'tidySettings_',
+  'writeStartHere_',
+  'upgradeRuleText_',
+  'ensureTab_',
+  'setValidationList_',
+  'tidyReportRows_',
+  'DEFAULT_WEEKS',
+  'OLD_DEFAULTS',
+  'OLD_RULE_TEXT',
 ];
 
 // Apps Script services, plus the settings cache that src/config.ts keeps as a real global

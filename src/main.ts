@@ -41,7 +41,5 @@ export {
 // Demo data.
 export { menuAddDemo, menuRemoveDemo } from './demo.js';
 
-export {
-  // Menu and script editor.
-  setup,
-} from './legacy.js';
+// Setup and repair.
+export { setup } from './setup.js';
