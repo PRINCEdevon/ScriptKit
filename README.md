@@ -25,24 +25,20 @@ all running on Google Sheets and Apps Script.
 ---
 
 **A simple reporting system for accelerator programmes.** <br/>
-Teams in an accelerator programme send a short report on scheduled days and get instant
-feedback, while their mentors and the programme manager are kept up to date by email.
+Teams in an accelerator programme send a short report on _scheduled days_ and get _instant
+feedback_ on it, while their mentors and the programme manager are kept up to date by email. Each team reports through its own private link, so there are no accounts or passwords
+to manage.
 
-It runs entirely on tools the programme already has:
+It runs entirely on tools the programme already has. _Google Sheets_ is the database and the
+admin screen, where every tab is a table the programme manager can read. _Google Apps Script_
+is the serverless backend: it runs the web app behind the report page, adds a menu to the
+Sheet, and uses time-driven triggers like cron jobs to send reminders and digests. The report
+form itself is a _plain HTML page_ on the programme's own website, and this repository is the
+development environment around it all, with typed code, tests that run without Google, CI and
+instructions for AI coding agents.
 
-- **Google Sheets** <br/>
-  The database and the admin screen: every tab is a table the programme manager can read.
-- **Google Apps Script** <br/>
-  The serverless backend: a web app for the report page, a menu inside the Sheet, and
-  time-driven triggers that run like cron jobs to send reminders and digests.
-- **A simple web page** <br/>
-  The report form is plain HTML, CSS and JavaScript, hosted on the programme's own website.
-- **This repository** <br/>
-  The development environment: typed code, tests that run without Google, CI, and
-  instructions for AI coding agents.
-
-One copy runs per programme. Everything that differs between programmes (name, time zone,
-currency, email switches) lives in the Sheet's Settings tab, not in code.
+One copy runs _per programme_. Everything that differs between programmes, such as the name,
+time zone, currency and email switches, lives in the Sheet's Settings tab rather than in code.
 
 > [!NOTE]
 > **Status: migrated, not yet live** <br/>
@@ -82,24 +78,65 @@ flowchart LR
 
 > [!TIP]
 > **Three things about Apps Script shape this repository** <br/>
+> Apps Script has no modules at runtime and finds entrypoints by name, so the build bundles
+> `src/` into one script with a top-level function for each entrypoint. Google's services are
+> globals, and nothing from Node.js is available.
+>
+> <details>
+> <summary><strong>See more: how the build fits Apps Script</strong></summary>
+> <br/>
 >
 > - **There are no modules at runtime** <br/>
 >   Every file in a script project shares one global scope, and Apps Script finds `doGet`,
 >   `doPost`, `onOpen`, menu handlers and triggers by looking for top-level functions with
->   those names.
+>   those names. Menus and installed triggers call them by name, so renaming one breaks live
+>   Sheets.
 > - **The build bridges the gap** <br/>
->   `scripts/build.js` bundles `src/` with esbuild into one script and adds a top-level
->   function for each export of `src/main.ts`. Exporting a function from `main.ts` is how it
->   becomes an entrypoint.
+>   `scripts/build.js` bundles `src/` with esbuild into one script, `dist/Code.js`, and adds a
+>   top-level function for each export of `src/main.ts`. Exporting a function from `main.ts` is
+>   how it becomes an entrypoint:
+>
+>   ```js
+>   function doGet(...args) {
+>     return ScriptKit.doGet(...args);
+>   }
+>   ```
+>
 > - **Google services are globals** <br/>
->   Types come from `@types/google-apps-script`, and `src/` is type-checked without Node.js
->   types, because Node APIs do not exist in Apps Script.
+>   `SpreadsheetApp`, `MailApp`, `DriveApp` and the rest need no import. Types come from
+>   `@types/google-apps-script`, and `src/` is type-checked without Node.js types, because Node
+>   APIs do not exist in Apps Script.
+>
+> </details>
 
 > [!IMPORTANT]
 > **The report page is deployed separately** <br/>
-> It lives in [`web/`](web/) as plain HTML, CSS and JavaScript, is uploaded to the programme's
-> website, and talks to the web app with `fetch`. Changing the web app's requests or replies
-> can break the live page: [web/README.md](web/README.md) describes the contract it depends on.
+> The page teams fill in lives in [`web/`](web/) and is uploaded to the programme's website, not
+> to Apps Script. It talks to the web app with `fetch`, so changing the web app's requests or
+> replies can break the live page.
+>
+> <details>
+> <summary><strong>See more: how the page talks to the web app</strong></summary>
+> <br/>
+>
+> - **Two kinds of request** <br/>
+>   The page reads the team's private code from its own address (`?t=<code>`), loads the
+>   team's view with a `GET`, and sends reports and corrections with a `POST`. Every reply is
+>   JSON, and a failure carries an error code and a message the page shows.
+> - **Browser behaviour to keep** <br/>
+>   The `POST` body is JSON sent without a JSON content type, because Apps Script cannot answer
+>   a CORS preflight. Google replies with a redirect, which `fetch` follows to read the answer.
+> - **The page and the web app update separately** <br/>
+>   Pushing code does not change the web app until its deployment is updated, and the page
+>   changes only when it is uploaded again. A change to either side must keep working with the
+>   other side that is already live.
+> - **Preparing the page** <br/>
+>   The Sheet's **Prepare the report page** menu item fills in the template from Drive with the
+>   web app address and the programme's details, ready to upload.
+>
+> [web/README.md](web/README.md) describes the full contract, with every field and error code.
+>
+> </details>
 
 <br/>
 
