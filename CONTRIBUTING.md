@@ -1,27 +1,62 @@
 # Contributing to ScriptKit
 
-Thanks for helping. This guide covers setting up, how changes are made, and what a good pull
-request looks like. Coding agents also follow [AGENTS.md](AGENTS.md), which states the same
-rules more tersely.
+Thanks for helping. This guide covers getting set up, how changes are made, and what a good
+pull request looks like. Coding agents also follow [AGENTS.md](AGENTS.md), which states the
+same rules more tersely.
 
 By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## Setting up
+## Contents
 
-You need Node.js 24 or newer and pnpm (the version is pinned in `package.json`).
+1. [Prerequisites](#prerequisites)
+2. [Quick start](#quick-start)
+3. [Making changes](#making-changes)
+4. [Code guidelines](#code-guidelines)
+5. [Automated testing](#automated-testing)
+6. [Fixing known issues](#fixing-known-issues)
+7. [Reporting problems](#reporting-problems)
+8. [Trying changes on Google](#trying-changes-on-google)
+
+## Prerequisites
+
+- **Node.js 24 or newer**, the LTS version CI uses.
+- **pnpm.** The exact version is pinned in `package.json` (`packageManager`).
+- **Git.**
+
+That's all you need to develop and test: the tests use in-memory fakes of the Google services,
+so **no Google account is needed**. You only need one to try a build in a real Apps Script
+project (see [Trying changes on Google](#trying-changes-on-google)).
+
+## Quick start
 
 ```bash
 git clone https://github.com/PRINCEdevon/ScriptKit.git
 cd ScriptKit
-pnpm install   # installs dependencies and the Git hooks
-pnpm check     # everything CI runs
+pnpm install   # dependencies and Git hooks
+pnpm check     # typecheck, lint, format check, tests and build: what CI runs
 ```
 
-You do not need a Google account to develop or test: the tests use in-memory fakes of the
-Google services. You only need one to try a build in a real Apps Script project (see
-[Trying a change on Google](#trying-a-change-on-google)).
+If `pnpm check` passes, you're ready. These are the commands you'll use:
 
-## Making a change
+| Command           | What it does                                                                             |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| `pnpm build`      | Bundle `src/` into `dist/Code.js` and copy `appsscript.json`.                            |
+| `pnpm dev`        | Rebuild on every change to `src/` or `appsscript.json`.                                  |
+| `pnpm test`       | Run the test suite once (`pnpm test:watch` to keep it running).                          |
+| `pnpm typecheck`  | TypeScript, for `src/` and for the Node.js tooling.                                      |
+| `pnpm lint`       | ESLint.                                                                                  |
+| `pnpm format`     | Format with Prettier (`pnpm format:check` to only check).                                |
+| `pnpm check`      | All of the above, in CI's order.                                                         |
+| `pnpm clasp:push` | Check, build and upload `dist/` to Apps Script ([see below](#trying-changes-on-google)). |
+
+[Lefthook](https://lefthook.dev) installs the Git hooks during `pnpm install` (reinstall with
+`pnpm exec lefthook install`):
+
+- **pre-commit**: ESLint and a Prettier check on the files you're committing.
+- **commit-msg**: the subject line must follow Conventional Commits (below).
+- **pre-push**: `pnpm check`.
+
+## Making changes
 
 1. **Start from the latest `main`** on a short branch named after the kind of change:
    `fix/digest-repeats`, `feat/reminder-time`, `refactor/sheets`, `docs/readme`.
@@ -29,8 +64,7 @@ Google services. You only need one to try a build in a real Apps Script project 
 3. **Commit with [Conventional Commits](https://www.conventionalcommits.org):**
    `type(scope): description`, imperative and lowercase, for example
    `fix(email): skip teams without addresses`. The types are `feat`, `fix`, `refactor`,
-   `test`, `docs`, `chore`, `ci`, `build`, `style`, `perf` and `revert`. The commit-msg hook
-   checks the subject line.
+   `test`, `docs`, `chore`, `ci`, `build`, `style`, `perf` and `revert`.
 4. **Run `pnpm check`** before you push. The pre-push hook runs it too. Please don't bypass
    the hooks.
 5. **Open a pull request** into `main` and fill in the template: a summary, what was added and
@@ -46,47 +80,61 @@ Google services. You only need one to try a build in a real Apps Script project 
   triggers find them by name, so renaming one breaks live Sheets.
 - **Strict TypeScript, small functions.** Prefer pure functions for business logic, and keep
   calls to Google services in thin functions around them. No classes-as-services, dependency
-  injection or frameworks.
-- **The Sheet is the schema.** Column headings, Settings keys and the web app's request and
-  response format are contracts with existing Sheets and the report page; change them only on
-  purpose, with a migration path.
+  injection or frameworks. `src/` must not use Node.js APIs; Apps Script doesn't have them.
+- **The Sheet is the schema.** Tab names, column headings, Settings keys and the web app's
+  requests and replies are contracts with existing Sheets and the report page. Change them only
+  on purpose, with a migration path.
 - **Comments explain why** (a business rule, an Apps Script quirk), not what the code does.
 - **Never edit `legacy/Code.gs`.** It is the original application; a test checks its hash.
 
-## Tests
+## Automated testing
 
-- Add or update tests with every change. Run a single file with
-  `pnpm test tests/email/email.test.ts`.
-- Tests must never call real Google services, send email or create triggers. Use the fakes in
-  `tests/support/`: `useFakeGoogle()` installs them as globals, and `seedTab()` fills a tab.
-- Most tests run the same inputs through the typed code and through `legacy/Code.gs`
-  (`loadLegacy()`) and compare the results. A refactor must keep every comparison passing. A
-  fix that deliberately changes behaviour updates exactly the comparisons it changes, pins
-  the new behaviour with its own assertions, and says so in the pull request.
+- **Every change comes with tests.** Run one file with
+  `pnpm test tests/email/email.test.ts`, or everything with `pnpm check`.
+- **Never call real Google services.** Tests must not send email, touch a real Sheet or create
+  triggers. Use the fakes in `tests/support/`: `useFakeGoogle()` installs them as globals and
+  `seedTab()` fills a tab.
+- **Compare with the original.** Most tests run the same inputs through the typed code and
+  through `legacy/Code.gs` (`loadLegacy()`) and compare the results. A refactor must keep every
+  comparison passing. A fix that deliberately changes behaviour updates exactly the comparisons
+  it changes, pins the new behaviour with its own assertions, and says so in the pull request.
+- **Whole-app baselines** in `tests/baseline/` run full scenarios against the built bundle.
+  They should keep passing unchanged.
 
-## Fixing a known issue
+## Fixing known issues
 
 [docs/known-issues.md](docs/known-issues.md) lists behaviour kept from the original that is
 worth fixing. Fix one issue per `fix:` pull request, with a test, and move its entry to the
-"Fixed" section.
-
-## Trying a change on Google
-
-Never point `.clasp.json` at a live programme's project while developing. Use a staging
-project bound to a copy of the Sheet, with `send_all_emails_to` set to your own address so that
-every email comes to you. Then:
-
-```bash
-cp .clasp.json.example .clasp.json   # set the staging scriptId
-pnpm exec clasp login
-pnpm clasp:push
-```
-
-The Sheet's menu runs the new code straight away. To try the report page, update the staging
-web app deployment as well. The [README](README.md#deploying) explains the difference.
+"Fixed" section. [docs/legacy-map.md](docs/legacy-map.md) shows where each original function
+lives now.
 
 ## Reporting problems
 
 - **Bugs and ideas:** open a GitHub issue with what you did, what you expected and what
-  happened.
+  happened. Never paste real team codes, email addresses or Sheet exports.
 - **Security problems:** please don't open an issue; follow [SECURITY.md](SECURITY.md).
+
+## Trying changes on Google
+
+Tests cover the code without Google, but some things only show up on the real platform. When a
+change needs that, try it on a **staging** project, never on a live programme's:
+
+1. Make a staging Sheet (a copy of a programme's Sheet, or a new one with "Add demo data"), open
+   **Extensions › Apps Script**, and note the **Script ID** under Project Settings.
+2. In the staging Sheet's Settings tab, set `send_all_emails_to`, `admin_email` and
+   `contact_email` to your own address, so every email comes to you.
+3. Push your build:
+
+   ```bash
+   cp .clasp.json.example .clasp.json   # set the staging scriptId
+   pnpm exec clasp login
+   pnpm clasp:push
+   ```
+
+4. Reload the Sheet and run **Set up or repair the sheet**. In Apps Script's Project Settings,
+   check that the `SHEET_ID` script property matches the ID in the staging Sheet's address
+   (a copied Sheet can still point at the original until setup runs).
+5. The menu now runs your code. To try the report page, also create or update a web app
+   deployment; the [README](README.md) explains the difference between pushing and deploying.
+
+Record what you checked in the pull request's Notes.
