@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { clearSettingsCache } from '../src/config.js';
 import { readWeeks, type Week } from '../src/dates.js';
 import {
   readReports,
@@ -330,7 +331,7 @@ describe('submissions and corrections', () => {
     for (const [now, body] of steps) {
       vi.setSystemTime(new Date(now));
       const legacy = loadLegacy(original, now); // a fresh run, as for each web request
-      globalThis.SETTINGS_CACHE_ = null;
+      clearSettingsCache();
       const handler = body.action === 'correct' ? submitCorrection : submitReport;
       const legacyHandler = body.action === 'correct' ? 'submitCorrection_' : 'submitReport_';
       expect(

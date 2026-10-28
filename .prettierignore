@@ -2,10 +2,8 @@ dist/
 coverage/
 pnpm-lock.yaml
 
-# Kept byte-for-byte: the legacy reference, its transitional copy in src/, and the page
-# template that is copied to Drive.
+# Kept byte-for-byte: the legacy reference and the page template that is copied to Drive.
 legacy/
-src/legacy.js
 web/report-template.html
 
 # Programme files a maintainer may keep at the repository root for reference

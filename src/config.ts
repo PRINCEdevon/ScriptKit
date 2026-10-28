@@ -6,13 +6,8 @@ import { appendRow, readTable, setCells, type TabKey } from './sheets.js';
 import type { Cell, Row, Settings } from './types.js';
 import { toNumber } from './utils.js';
 
-declare global {
-  // The cache is a real global variable, as in the original script: until setup and
-  // tidySettings_ move out of src/legacy.js (PR 7) they clear it by assigning
-  // SETTINGS_CACHE_ = null themselves, which an imported binding would not allow.
-  var SETTINGS_CACHE_: Settings | null;
-}
-globalThis.SETTINGS_CACHE_ = null;
+/** The settings read in this run (see settings()). */
+let cache: Settings | null = null;
 
 export const DEFAULT_TZ = 'Africa/Johannesburg';
 
@@ -108,7 +103,7 @@ export function settingsFrom(rows: Row[]): Settings {
  * new run). Without a Settings tab the defaults are returned, and not cached.
  */
 export function settings(): Settings {
-  if (globalThis.SETTINGS_CACHE_) return globalThis.SETTINGS_CACHE_;
+  if (cache) return cache;
   let rows: Row[] | null = null;
   try {
     rows = readTable('settings').rows;
@@ -116,12 +111,12 @@ export function settings(): Settings {
     // No Settings tab yet (before setup has run).
   }
   const values = settingsFrom(rows ?? []);
-  if (rows) globalThis.SETTINGS_CACHE_ = values;
+  if (rows) cache = values;
   return values;
 }
 
 export function clearSettingsCache(): void {
-  globalThis.SETTINGS_CACHE_ = null;
+  cache = null;
 }
 
 /** Writes one setting, adding a row for it if the tab does not have one yet. */
@@ -134,8 +129,8 @@ export function setSetting(key: string, value: Cell): void {
 }
 
 /**
- * appendRow for callers that may add a setting, which makes the cached settings stale. The
- * legacy code calls this as appendRow_ (setup adds missing settings with it).
+ * appendRow for callers that may add a setting, which makes the cached settings stale (setup
+ * adds missing settings with it).
  */
 export function appendTableRow(key: TabKey, record: Record<string, unknown>): void {
   if (key === 'settings') clearSettingsCache();

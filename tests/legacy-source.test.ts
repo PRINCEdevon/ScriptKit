@@ -1,20 +1,12 @@
-import { readFileSync } from 'node:fs';
-import { ESLint } from 'eslint';
+import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import {
-  legacySource,
-  topLevelDeclarations,
-  topLevelFunctions,
-  topLevelStatementStarts,
-} from './support/legacy-source.js';
+import { legacySource, topLevelDeclarations, topLevelFunctions } from './support/legacy-source.js';
 
-// src/legacy.js is the transitional copy of legacy/Code.gs that the build bundles. Functions
-// are moved out of it into typed modules one PR at a time; whatever remains must stay exactly
-// as it was in the original, so that refactoring never hides a change of behaviour there.
-//
-// When a PR moves a legacy function or variable into a module, delete it from src/legacy.js
-// and add its name here.
-const EXTRACTED: string[] = [
+// The migration moved every top-level declaration of legacy/Code.gs into a typed module in
+// src/, one PR at a time, through a transitional copy (src/legacy.js) whose remaining code had
+// to stay identical to the original. That copy is gone; this test records where everything
+// went, so that nothing was dropped silently. docs/legacy-map.md has the new names.
+const MIGRATED: string[] = [
   // PR 3: src/sheets.ts and src/utils.ts
   'TABS',
   'ss_',
@@ -25,7 +17,7 @@ const EXTRACTED: string[] = [
   'safe_',
   'num_',
   'parseNumber_',
-  // PR 3: src/config.ts (SETTINGS_CACHE_ is now a real global there)
+  // PR 3: src/config.ts (SETTINGS_CACHE_ became a module variable in PR 7)
   'DEFAULT_TZ',
   'DEFAULT_SETTINGS',
   'SETTINGS_CACHE_',
@@ -117,67 +109,58 @@ const EXTRACTED: string[] = [
   'menuEmailsOff',
   'removeTriggers_',
   'autoDaily',
+  // PR 7: src/page.ts
+  'menuPreparePage',
+  'uploadSteps_',
+  'preparePage_',
+  'htmlEscape_',
+  // PR 7: src/admin.ts
+  'onOpen',
+  'menuShowThisWeek',
+  'menuShowAll',
+  'menuRefreshLog',
+  'menuCreateLinks',
+  'menuEmailLinks',
+  'checkSetup',
+  // PR 7: src/demo.ts
+  'menuAddDemo',
+  'addDemo_',
+  'menuRemoveDemo',
+  'removeDemo_',
+  // PR 7: src/setup.ts
+  'setup',
+  'tidySettings_',
+  'writeStartHere_',
+  'upgradeRuleText_',
+  'ensureTab_',
+  'setValidationList_',
+  'tidyReportRows_',
+  'DEFAULT_WEEKS',
+  'OLD_DEFAULTS',
+  'OLD_RULE_TEXT',
 ];
 
-// Apps Script services, plus the settings cache that src/config.ts keeps as a real global
-// because legacy code still assigns it directly (see docs/legacy-map.md).
-const APPS_SCRIPT_GLOBALS = {
-  ...Object.fromEntries(
-    [
-      'SpreadsheetApp',
-      'DriveApp',
-      'MailApp',
-      'ScriptApp',
-      'PropertiesService',
-      'LockService',
-      'Utilities',
-      'ContentService',
-      'Logger',
-    ].map((name) => [name, 'readonly' as const]),
-  ),
-  SETTINGS_CACHE_: 'writable' as const,
+// Legacy declarations with no typed counterpart, and why.
+const RETIRED: Record<string, string> = {
+  find_: 'typed code uses Array.prototype.find (with ?? null where the original null matters)',
+  fmtStamp_: 'never called in the original',
 };
 
-const copySource = readFileSync(new URL('../src/legacy.js', import.meta.url), 'utf8');
 const original = topLevelDeclarations(legacySource);
-const copy = topLevelDeclarations(copySource);
 
-describe('src/legacy.js', () => {
-  it('keeps every remaining legacy declaration exactly as in legacy/Code.gs', () => {
-    for (const [name, text] of copy) {
-      expect(original.has(name), `${name} is not a legacy declaration`).toBe(true);
-      expect(text, `${name} differs from legacy/Code.gs`).toBe(original.get(name));
-    }
+describe('the migration from legacy/Code.gs', () => {
+  it('accounts for every top-level legacy declaration exactly once', () => {
+    const accounted = [...MIGRATED, ...Object.keys(RETIRED)];
+    expect(new Set(accounted).size).toBe(accounted.length);
+    expect(accounted.sort()).toEqual([...original.keys()].sort());
   });
 
-  it('is missing only the declarations listed as extracted', () => {
-    const missing = [...original.keys()].filter((name) => !copy.has(name)).sort();
-    expect(missing).toEqual([...EXTRACTED].sort());
-  });
-
-  it('adds nothing at the top level except comments, imports and exports', () => {
-    const added = topLevelStatementStarts(copySource).filter(
-      (line) => !/^(function |var |\/\*|\/\/|import |export )/.test(line),
-    );
-    expect(added).toEqual([]);
-  });
-
-  it('declares or imports every name it uses', async () => {
-    // A moved function that is still called but not imported would only fail when that line
-    // runs, because the bundle treats unknown names as globals.
-    const eslint = new ESLint({
-      overrideConfigFile: true,
-      overrideConfig: {
-        languageOptions: { sourceType: 'module', ecmaVersion: 2019, globals: APPS_SCRIPT_GLOBALS },
-        rules: { 'no-undef': 'error' },
-      },
-    });
-    const [result] = await eslint.lintText(copySource, { filePath: 'legacy.js' });
-    expect(result?.messages.map((m) => `${m.line}: ${m.message}`)).toEqual([]);
+  it('has removed the transitional copy', () => {
+    expect(existsSync(new URL('../src/legacy.js', import.meta.url))).toBe(false);
   });
 
   it('parses every top-level legacy declaration separately', () => {
-    // Guards the parser above: a missed or merged declaration would weaken both checks.
+    // Guards the parser: a missed or merged declaration would weaken the check above.
     expect(topLevelFunctions(legacySource).every((name) => original.has(name))).toBe(true);
     expect(original.size).toBe(legacySource.match(/^(function|var) /gm)?.length);
   });

@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import vm from 'node:vm';
 import { vi } from 'vitest';
 import { build } from '../../scripts/build.js';
+import { clearSettingsCache } from '../../src/config.js';
 import { FakeBlob, FakeGoogle, type Cell, type FakeSheet } from './fake-google.js';
 
 export interface Implementation {
@@ -58,7 +59,8 @@ function fixedClock(now: number): string {
 
 /** Round-trips through JSON: dates become ISO strings and values from the script's realm become plain data. */
 export function json<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+  // JSON.stringify(undefined) is undefined, which JSON.parse cannot read.
+  return value === undefined ? value : (JSON.parse(JSON.stringify(value)) as T);
 }
 
 /** A tab of the fake spreadsheet, edited by column heading the way a person would edit it. */
@@ -159,34 +161,7 @@ export class App {
 
   /** Everything the script can change, as plain data. */
   snapshot() {
-    const { spreadsheet, drive } = this.google;
-    return json({
-      sheets: spreadsheet.getSheets().map((sheet) => ({
-        name: sheet.getName(),
-        values: sheet.getDataRange().getValues(),
-        frozenRows: sheet.frozenRows,
-        hiddenColumns: sheet.hiddenColumns,
-        filter: sheet.filter?.criteria ?? null,
-      })),
-      activeSheet: spreadsheet.activeSheet?.getName() ?? null,
-      timeZone: spreadsheet.timeZone,
-      scriptProperties: Object.fromEntries(this.google.scriptProperties),
-      folders: drive.folders.map((folder) => folder.path()),
-      files: drive.files
-        .filter((file) => file.blob)
-        .map((file) => ({
-          path: `${file.parent.path()}/${file.name}`,
-          contentType: file.blob?.contentType,
-          text: file.blob?.getDataAsString(),
-          trashed: file.trashed,
-        })),
-      mail: this.google.mail,
-      triggers: this.google.triggers.map((trigger) => trigger.spec),
-      menus: this.google.ui.menus,
-      dialogs: this.google.ui.dialogs,
-      toasts: this.google.toasts,
-      logs: this.google.logs,
-    });
+    return stateOf(this.google);
   }
 }
 
@@ -229,8 +204,8 @@ export function loadLegacy(google: FakeGoogle, now = '2026-12-07T10:00:00+02:00'
 export function useFakeGoogle(): FakeGoogle {
   const google = new FakeGoogle();
   for (const [name, service] of Object.entries(google.globals())) vi.stubGlobal(name, service);
-  // Each test is a fresh run: forget settings cached by an earlier one (see src/config.ts).
-  globalThis.SETTINGS_CACHE_ = null;
+  // Each test is a fresh run: forget settings cached by an earlier one.
+  clearSettingsCache();
   return google;
 }
 
@@ -241,4 +216,36 @@ export function outcome(fn: () => unknown): { value: unknown } | { error: string
   } catch (error) {
     return { error: String((error as Error).message) };
   }
+}
+
+/** Everything a script can change in a set of fakes, as plain data. */
+export function stateOf(google: FakeGoogle) {
+  const { spreadsheet, drive } = google;
+  return json({
+    sheets: spreadsheet.getSheets().map((sheet) => ({
+      name: sheet.getName(),
+      values: sheet.getDataRange().getValues(),
+      frozenRows: sheet.frozenRows,
+      hiddenColumns: sheet.hiddenColumns,
+      filter: sheet.filter?.criteria ?? null,
+    })),
+    activeSheet: spreadsheet.activeSheet?.getName() ?? null,
+    timeZone: spreadsheet.timeZone,
+    scriptProperties: Object.fromEntries(google.scriptProperties),
+    folders: drive.folders.map((folder) => folder.path()),
+    files: drive.files
+      .filter((file) => file.blob)
+      .map((file) => ({
+        path: `${file.parent.path()}/${file.name}`,
+        contentType: file.blob?.contentType,
+        text: file.blob?.getDataAsString(),
+        trashed: file.trashed,
+      })),
+    mail: google.mail,
+    triggers: google.triggers.map((trigger) => trigger.spec),
+    menus: google.ui.menus,
+    dialogs: google.ui.dialogs,
+    toasts: google.toasts,
+    logs: google.logs,
+  });
 }

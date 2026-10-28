@@ -14,8 +14,8 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
 | 3   | `refactor/sheets-and-teams`      | refactor: migrate Sheets and team management        | Merged                           |
 | 4   | `refactor/feedback`              | refactor: migrate feedback and scoreboard logic     | Merged                           |
 | 5   | `refactor/reports`               | refactor: migrate report submissions and pipeline   | Merged                           |
-| 6   | `refactor/notifications`         | refactor: migrate email and scheduled jobs          | Ready for review (branch pushed) |
-| 7   | `refactor/admin-and-integration` | refactor: complete administration and integration   | Not started                      |
+| 6   | `refactor/notifications`         | refactor: migrate email and scheduled jobs          | Merged                           |
+| 7   | `refactor/admin-and-integration` | refactor: complete administration and integration   | Ready for review (branch pushed) |
 
 ## The steps
 
@@ -37,18 +37,21 @@ pull request that leaves `main` working. Bug fixes come afterwards, in separate 
    `recordReport_` works out for feedback (previous report, totals, stage moves, stuck
    organisations, cohorts), and the Report log that every submission rebuilds
    (`refreshReportLog_`).
+6. **Notifications.** `sendMail_` (including test mode), reminders, digests, replies and the
+   trigger handlers, tested with fake mail and trigger services.
+7. **Administration and integration.** Menus, setup and repair, demo data, the report page
+   preparation, and the remaining legacy functions. Remove the transitional legacy module,
+   check every entrypoint, and document any manual verification still needed.
 
 Feedback comes before reports (the original order had them the other way round) because the
-report code calls the feedback and scoreboard code, and typed modules never import from
-`src/legacy.js`. 6. **Notifications.** `sendMail_` (including test mode), reminders, digests, replies and
-the trigger handlers, tested with fake mail and trigger services. 7. **Administration and integration.** Menus, setup and repair, demo data, the report page
-preparation, and the remaining legacy functions. Remove the transitional legacy module,
-check every entrypoint, and document any manual verification still needed.
+report code calls the feedback and scoreboard code, and typed modules never imported from
+`src/legacy.js`.
 
-## How each refactoring PR works
+## How the refactoring PRs worked
 
-The legacy code lives on in `src/legacy.js` (an unchanged copy of `legacy/Code.gs` plus an
-export block) until every function has moved. For each function or group a PR migrates:
+The legacy code lived on in `src/legacy.js` (an unchanged copy of `legacy/Code.gs` plus an
+export block) until every function had moved; PR 7 deleted it. For each function or group a
+PR migrated:
 
 1. Write it as typed TypeScript in a feature module (`src/teams.ts`, ...), keeping its
    behaviour, including the known issues.
@@ -89,6 +92,38 @@ happen before the live project switches to the bundle.
 | PR 3  | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`)                              |
 | PR 4  | The same test project (pushed and read back) | Menu, "Set up or repair the sheet", "Check permissions", demo data | Web app (`doGet`/`doPost`), which runs the scoreboard   |
 | PR 5  | Not pushed                                   | Nothing                                                            | Everything: the first build whose web app is typed code |
+| PR 6  | Not pushed                                   | Nothing                                                            | Everything                                              |
+
+## Going live
+
+The test project has only ever run builds up to PR 4, and the web app has never run on Google.
+Before a live programme switches from the pasted `Code.gs` to the bundle:
+
+1. In the test project (`.clasp.json`), push the current `main` with `pnpm clasp:push` and
+   repeat the Sheet checks: reload for the menu, "Set up or repair the sheet", "Check
+   permissions", "Add demo data", then "Remove demo data" and "Set up or repair the sheet"
+   again (see the known issue about deleted rows).
+2. Run the web app there: create a web app deployment, open a demo team's page from a
+   prepared report page, send a report and a correction, and check the Reports, Pipeline and
+   Corrections tabs and the proof folder.
+3. With `send_all_emails_to` set to your own address, try "Testing > Send reminders now" and
+   "Send Tuesday digests now".
+4. Decide which Google account pushes and deploys the live project. This checkout's clasp
+   login is a personal account, which may not be able to edit it. The manifest runs the web
+   app as the deploying user (`executeAs: USER_DEPLOYING`), which likely also decides whose
+   mailbox sends the emails and whose Drive holds the proof files; confirm that against
+   Google's web app deployment documentation.
+5. For the live project: compare its manifest with `appsscript.json` (time zone included),
+   point `.clasp.json` at it, `pnpm clasp:push`, then update its existing web app deployment
+   to the new version so the report page's address stays the same. Run "Check permissions".
+6. Keep the pasted `Code.gs` (a copy of `legacy/Code.gs`) at hand: pushing it back and
+   redeploying is the way back.
+
+## After the migration
+
+Fix the issues in [known-issues.md](known-issues.md) in separate `fix:` PRs, each with a
+test. Most tests compare the typed code with `legacy/Code.gs`, so a fix that changes
+behaviour updates exactly the comparisons it changes and pins the new behaviour instead.
 
 ## Legacy entrypoints
 

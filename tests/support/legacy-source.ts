@@ -50,8 +50,3 @@ export function topLevelDeclarations(source: string): Map<string, string> {
   flush();
   return declarations;
 }
-
-/** Lines that start a new top-level statement (see topLevelDeclarations). */
-export function topLevelStatementStarts(source: string): string[] {
-  return source.split('\n').filter((line) => /^[^\s\]})]/.test(line));
-}

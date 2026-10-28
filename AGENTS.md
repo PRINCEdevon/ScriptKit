@@ -11,13 +11,10 @@ works and `docs/migration-plan.md` for what is being done now.
   easy to find: keep them in thin functions, separate from pure logic.
 - `src/main.ts` exports every Apps Script entrypoint. The build turns each export into a
   top-level function. Menus and installed triggers call these by name, so never rename one.
-- `legacy/Code.gs` is the behaviour reference. Never edit it; a test checks its hash.
-- `src/legacy.js` is its transitional copy in the build. Only ever delete migrated
-  declarations from it and add imports; list each deletion in `EXTRACTED` in
-  `tests/legacy-source.test.ts`. `docs/legacy-map.md` shows what goes where.
-- Imports only go one way: `src/legacy.js` imports from typed modules, never the reverse
-  (that would create an import cycle and pull the legacy copy into type checking). A
-  helper still in `src/legacy.js` moves to a typed module with its first typed caller.
+- `legacy/Code.gs` is the original application and the behaviour reference. Never edit it;
+  a test checks its hash. `docs/legacy-map.md` maps each original function to its module.
+- Modules import in one direction (no cycles): `types` and `utils` at the bottom, `main` at
+  the top.
 - The HTML frontend in `web/` is deployed separately. Preserve its API contract.
 - No frameworks, dependency injection, classes-as-services or layered folders. Prefer a flat
   set of feature modules (`reports.ts`, `feedback.ts`, ...), created when they are needed.
@@ -29,17 +26,18 @@ works and `docs/migration-plan.md` for what is being done now.
 - Comments explain business rules and Apps Script quirks, not what the code says.
 - Follow ESLint and Prettier (`pnpm lint`, `pnpm format`).
 - Add tests with every migrated or changed behaviour. Tests never touch real Google services:
-  use the fakes in `tests/support/`. The baseline tests (`tests/baseline/`) compare the
-  bundle with `legacy/Code.gs` and must keep passing unchanged through every refactor.
+  use the fakes in `tests/support/`. Most tests compare the typed code with `legacy/Code.gs`
+  on the same fakes. A refactor must keep them all passing unchanged. A `fix:` PR that
+  deliberately changes behaviour updates exactly the comparisons it changes, pins the new
+  behaviour, and says so in the PR.
 - Do not reformat or rename code outside the change. Never edit `dist/`.
 
-## Migration
+## Changes and fixes
 
-- Follow `docs/migration-plan.md`: one PR at a time, starting from the latest `main`.
-- Preserve existing behaviour, spreadsheet schemas, Settings keys and HTTP contracts.
-- Do not fix bugs during a refactor. Record them in `docs/known-issues.md`; fix them in
-  separate `fix:` PRs.
-- Keep the build working at every step, and update docs and the plan's status as you go.
+- The migration is complete (`docs/migration-plan.md`). Start every PR from the latest `main`.
+- Preserve spreadsheet schemas, Settings keys, entrypoint names and HTTP contracts.
+- Fix the issues in `docs/known-issues.md` one per `fix:` PR, with a test; update the entry.
+- Keep refactoring and behaviour changes in separate PRs. Update docs as you go.
 
 ## Git
 
