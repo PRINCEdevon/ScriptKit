@@ -14,8 +14,8 @@ live programme, compare it with that programme's template in Drive.
 ## How the page reaches the backend
 
 The page reads the team's private code from its own URL (`?t=<code>`) and calls the Apps
-Script web app URL (`WEB_APP_URL` in the page). The handlers are in `src/api.ts` and
-`src/reports.ts`:
+Script web app URL (`WEB_APP_URL` in the page). The handlers are in `src/reports/web-app.ts` and
+`src/reports/reports.ts`:
 
 | Request                                              | Handler                       | Purpose                                     |
 | ---------------------------------------------------- | ----------------------------- | ------------------------------------------- |
@@ -46,7 +46,7 @@ version are updated at different times.
 
 ## Preparing and deploying the page
 
-The backend's "Prepare the report page" menu item (`preparePage` in `src/page.ts`)
+The backend's "Prepare the report page" menu item (`preparePage` in `src/admin/report-page.ts`)
 produces the uploadable page:
 
 1. It looks in the Sheet's Drive folder for a file named `<short name>-report TEMPLATE.html`

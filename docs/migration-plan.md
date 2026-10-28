@@ -53,7 +53,7 @@ The legacy code lived on in `src/legacy.js` (an unchanged copy of `legacy/Code.g
 export block) until every function had moved; PR 7 deleted it. For each function or group a
 PR migrated:
 
-1. Write it as typed TypeScript in a feature module (`src/teams.ts`, ...), keeping its
+1. Write it as typed TypeScript in a feature module (`src/shared/teams.ts`, ...), keeping its
    behaviour, including the known issues.
 2. Delete it from `src/legacy.js` and import it there instead, so the remaining legacy code
    calls the new version (`import { readTable as table_ } from './sheets.js'` if the name

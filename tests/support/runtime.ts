@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import vm from 'node:vm';
 import { vi } from 'vitest';
 import { build } from '../../scripts/build.js';
-import { clearSettingsCache } from '../../src/config.js';
+import { clearSettingsCache } from '../../src/shared/settings.js';
 import { FakeBlob, FakeGoogle, type Cell, type FakeSheet } from './fake-google.js';
 
 export interface Implementation {

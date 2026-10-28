@@ -7,7 +7,7 @@ import { legacySource, topLevelDeclarations, topLevelFunctions } from './support
 // to stay identical to the original. That copy is gone; this test records where everything
 // went, so that nothing was dropped silently. docs/legacy-map.md has the new names.
 const MIGRATED: string[] = [
-  // PR 3: src/sheets.ts and src/utils.ts
+  // PR 3: src/shared/sheets.ts and src/shared/utils.ts
   'TABS',
   'ss_',
   'table_',
@@ -17,7 +17,7 @@ const MIGRATED: string[] = [
   'safe_',
   'num_',
   'parseNumber_',
-  // PR 3: src/config.ts (SETTINGS_CACHE_ became a module variable in PR 7)
+  // PR 3: src/shared/settings.ts (SETTINGS_CACHE_ became a module variable in PR 7)
   'DEFAULT_TZ',
   'DEFAULT_SETTINGS',
   'SETTINGS_CACHE_',
@@ -31,7 +31,7 @@ const MIGRATED: string[] = [
   'pageName_',
   'pageTemplateName_',
   'reportName_',
-  // PR 3: src/dates.ts
+  // PR 3: src/shared/dates.ts
   'tz_',
   'todayStr_',
   'dstr_',
@@ -44,7 +44,7 @@ const MIGRATED: string[] = [
   'weeks_',
   'currentWeek_',
   'checkpointLabel_',
-  // PR 3: src/teams.ts
+  // PR 3: src/shared/teams.ts
   'teamsAll_',
   'teamByToken_',
   'trackOf_',
@@ -52,26 +52,26 @@ const MIGRATED: string[] = [
   'createLinks_',
   'randomToken_',
   'pad2_',
-  // PR 4: src/scoreboard.ts and src/pipeline.ts
+  // PR 4: src/feedback/scoreboard.ts and src/shared/pipeline.ts
   'scoreboard_',
   'totals_',
   'STAGE_NAMES',
   'latestSnapshot_',
-  // PR 4: src/feedback.ts and src/utils.ts
+  // PR 4: src/feedback/rules.ts and src/shared/utils.ts
   'DEFAULT_RULES',
   'RULES',
   'inRun_',
   'buildFeedback_',
   'fill_',
   'median_',
-  // PR 5: src/drive.ts, src/pipeline.ts and src/utils.ts
+  // PR 5: src/reports/proof-files.ts, src/shared/pipeline.ts and src/shared/utils.ts
   'saveProof_',
   'proofRootFolder_',
   'parentFolder_',
   'snapshotFor_',
   'clean_',
   'listOf_',
-  // PR 5: src/reports.ts
+  // PR 5: src/reports/reports.ts
   'LOG_TAB',
   'reportsAll_',
   'validate_',
@@ -82,14 +82,14 @@ const MIGRATED: string[] = [
   'byWeek_',
   'lastBefore_',
   'uniq_',
-  // PR 5: src/api.ts (doGet and doPost now come from there)
+  // PR 5: src/reports/web-app.ts (doGet and doPost now come from there)
   'doGet',
   'doPost',
   'json_',
   'getTeamView_',
   'weekInfo_',
   'parseJson_',
-  // PR 6: src/email.ts and src/sheets.ts
+  // PR 6: src/email/email.ts and src/shared/sheets.ts
   'sendMail_',
   'emailDestination_',
   'pretendBlocksAutoEmails_',
@@ -104,17 +104,17 @@ const MIGRATED: string[] = [
   'sendTickedReplies_',
   'menuSendReplies',
   'toast_',
-  // PR 6: src/triggers.ts
+  // PR 6: src/email/triggers.ts
   'menuEmailsOn',
   'menuEmailsOff',
   'removeTriggers_',
   'autoDaily',
-  // PR 7: src/page.ts
+  // PR 7: src/admin/report-page.ts
   'menuPreparePage',
   'uploadSteps_',
   'preparePage_',
   'htmlEscape_',
-  // PR 7: src/admin.ts
+  // PR 7: src/admin/menu.ts
   'onOpen',
   'menuShowThisWeek',
   'menuShowAll',
@@ -122,12 +122,12 @@ const MIGRATED: string[] = [
   'menuCreateLinks',
   'menuEmailLinks',
   'checkSetup',
-  // PR 7: src/demo.ts
+  // PR 7: src/admin/demo.ts
   'menuAddDemo',
   'addDemo_',
   'menuRemoveDemo',
   'removeDemo_',
-  // PR 7: src/setup.ts
+  // PR 7: src/admin/setup.ts
   'setup',
   'tidySettings_',
   'writeStartHere_',

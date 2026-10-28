@@ -9,7 +9,7 @@
  * Each module's entrypoints keep the names the original legacy/Code.gs gave them.
  */
 // Web app (the report page).
-export { doGet, doPost } from './api.js';
+export { doGet, doPost } from './reports/web-app.js';
 
 // Emails: menu items and time-driven triggers.
 export {
@@ -18,13 +18,13 @@ export {
   menuDigestsNow,
   menuRemindersNow,
   menuSendReplies,
-} from './email.js';
+} from './email/email.js';
 
 // Turning the automatic emails on and off, and the daily trigger.
-export { autoDaily, menuEmailsOff, menuEmailsOn } from './triggers.js';
+export { autoDaily, menuEmailsOff, menuEmailsOn } from './email/triggers.js';
 
 // Preparing the report page.
-export { menuPreparePage } from './page.js';
+export { menuPreparePage } from './admin/report-page.js';
 
 // The menu, its general items and the permissions check.
 export {
@@ -35,10 +35,10 @@ export {
   menuShowAll,
   menuShowThisWeek,
   onOpen,
-} from './admin.js';
+} from './admin/menu.js';
 
 // Demo data.
-export { menuAddDemo, menuRemoveDemo } from './demo.js';
+export { menuAddDemo, menuRemoveDemo } from './admin/demo.js';
 
 // Setup and repair.
-export { setup } from './setup.js';
+export { setup } from './admin/setup.js';

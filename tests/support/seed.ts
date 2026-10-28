@@ -1,6 +1,6 @@
 // Fills the fake spreadsheet with tabs, the way a person would set them up.
-import { TABS, type TabKey } from '../../src/sheets.js';
-import type { Cell } from '../../src/types.js';
+import { TABS, type TabKey } from '../../src/shared/sheets.js';
+import type { Cell } from '../../src/shared/types.js';
 import type { FakeGoogle } from './fake-google.js';
 
 /** Writes raw values (header row first) into a new tab. */
