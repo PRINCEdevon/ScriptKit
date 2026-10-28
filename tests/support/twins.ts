@@ -1,7 +1,7 @@
 // A programme seeded identically into two sets of fakes: one for the typed modules (installed
 // as globals) and one for the original legacy/Code.gs, so their results can be compared.
 import { expect, vi } from 'vitest';
-import { DEFAULT_RULES } from '../../src/feedback.js';
+import { DEFAULT_RULES } from '../../src/feedback/rules.js';
 import { FakeGoogle } from './fake-google.js';
 import { loadLegacy, useFakeGoogle } from './runtime.js';
 import { seedTab, tabValues } from './seed.js';
