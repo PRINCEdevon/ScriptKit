@@ -102,7 +102,7 @@ Before a live programme switches from the pasted `Code.gs` to the bundle:
 1. In the test project (`.clasp.json`), push the current `main` with `pnpm clasp:push` and
    repeat the Sheet checks: reload for the menu, "Set up or repair the sheet", "Check
    permissions", "Add demo data", then "Remove demo data" and "Set up or repair the sheet"
-   again (see the known issue about deleted rows).
+   again (this used to fail; see "Fixed" in known-issues.md).
 2. Run the web app there: create a web app deployment, open a demo team's page from a
    prepared report page, send a report and a correction, and check the Reports, Pipeline and
    Corrections tabs and the proof folder.
